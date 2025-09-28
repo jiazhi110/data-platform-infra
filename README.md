@@ -5,27 +5,40 @@ IaC for ingestion_kafka_flink and Top-produce-ETL.
 ## Project Structure
 
 ```
-.
-├── backend.tf          # Terraform backend configuration
-├── main.tf             # Main Terraform configuration
-├── outputs.tf          # Output definitions
-├── providers.tf        # Provider configurations
-├── variables.tf        # Variable definitions
-├── terraform.tfvars    # Default variable values
-├── modules/            # Reusable Terraform modules
-│   ├── vpc/            # VPC module
-│   ├── ecs/            # ECS module
-│   ├── msk/            # MSK module
-│   ├── s3/             # S3 module
-│   ├── iam/            # IAM module
-│   ├── glue/           # Glue module
-│   ├── eventbridge/    # EventBridge module
-│   ├── sns/            # SNS module
-│   └── ec2/            # EC2 module
-└── environments/       # Environment-specific configurations
-    ├── dev/            # Development environment
-    ├── staging/        # Staging environment
-    └── prod/           # Production environment
+├── README.md
+├── providers.tf
+│
+├── environments/
+│   ├── dev/
+│   │   ├── backend.tf           # dev 环境的 state 文件配置
+│   │   ├── locals.tf            # dev 环境的本地变量
+│   │   ├── main.tf              # 编排 dev 环境所有模块
+│   │   ├── outputs.tf           # 输出 dev 环境的重要信息
+│   │   └── terraform.tfvars     # dev 环境的专属配置
+│   │
+│   └── prod/
+│       ├── backend.tf           # prod 环境的 state 文件配置
+│       ├── main.tf              # 编排 prod 环境所有模块
+│       ├── outputs.tf
+│       └── terraform.tfvars     # prod 环境的专属配置
+│
+└── modules/
+    ├── networking/              # 模块1: 共享网络
+    │   ├── data.tf
+    │   ├── locals.tf
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    │
+    ├── ingestion_kafka_flink/   # 模块2: 实时摄取应用
+    │   ├── main.tf              # 定义 MSK, Flink App, S3, IAM 等资源
+    │   ├── variables.tf
+    │   └── outputs.tf
+    │
+    └── top_produce_etl/         # 模块3: 批量ETL应用
+        ├── main.tf              # 定义 Glue Job, Step Function, S3, IAM 等资源
+        ├── variables.tf
+        └── outputs.tf
 ```
 
 ## Prerequisites
@@ -61,30 +74,25 @@ IaC for ingestion_kafka_flink and Top-produce-ETL.
 ## Environments
 
 - **dev**: Development environment
-- **staging**: Staging environment
 - **prod**: Production environment
+
+Note: The staging environment has been removed from the current implementation.
 
 ## Modules
 
 This project uses the following modules:
 
-- **VPC**: Creates VPC with public and private subnets
-- **ECS**: Creates ECS cluster for containerized applications
-- **MSK**: Creates Amazon MSK cluster for Kafka
-- **S3**: Creates S3 buckets for data storage
-- **IAM**: Creates IAM roles and policies
-- **Glue**: Creates Glue resources for ETL jobs
-- **EventBridge**: Creates EventBridge rules and targets
-- **SNS**: Creates SNS topics and subscriptions
-- **EC2**: Creates EC2 instances
+- **networking**: Creates VPC with public and private subnets, Internet Gateway, and Route Tables
+- **ingestion_kafka_flink**: Creates resources for real-time data ingestion including MSK, Flink applications, S3 buckets, and IAM roles
+- **top_produce_etl**: Creates resources for batch ETL processing including Glue Jobs, Step Functions, S3 buckets, and IAM roles
 
 ## Variables
 
-See `variables.tf` for a list of all variables and their descriptions.
+Each environment has its own `terraform.tfvars` file with environment-specific configurations.
 
 ## Outputs
 
-See `outputs.tf` for a list of all outputs and their descriptions.
+Each module has its own `outputs.tf` file that exposes important resource attributes.
 
 ## Best Practices
 
