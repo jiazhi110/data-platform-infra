@@ -37,6 +37,15 @@ msk_scram_name_suffix = "msk-scram-credentials"
 # MSK security scram credentials Name for development
 msk_scram_name_prefix = "AmazonMSK"
 
+# ECR task definition Name for development
+flink_task_family_suffix = "family"
+
+# ECR task cpu for development 512:.5cpu
+flink_task_cpu = "521"
+
+# ECR task memory for development 3072:3GB
+flink_task_memory = "3072"
+
 # Glue Database Name for development
 # glue_database_name_suffix = "glue_dev_db"
 
@@ -57,8 +66,5 @@ client_security_group_ids = [
 msk_logs_bucket = "my-justin-data-platform-logs-bucket"
 
 msk_logs_bucket_prefix = "msk/dev"
-
-# 重要提示：在生产环境（prod/terraform.tfvars）中，应严格避免使用 "latest"，而是使用如 "v1.0.0" 这样的固定版本标签。
-producer_image_tag = "latest"
 
 flink_output_bucket = "ingestion-flink-output-s3"

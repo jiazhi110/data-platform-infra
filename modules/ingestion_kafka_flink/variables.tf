@@ -15,6 +15,11 @@ variable "environment" {
   }
 }
 
+variable "aws_region" {
+  description = "AWS region to deploy resources"
+  type        = string
+}
+
 # --- 网络相关的输入 ---
 # 这些值将由 networking 模块的输出提供。
 
@@ -99,4 +104,25 @@ variable "msk_logs_bucket_prefix" {
 variable "flink_output_bucket" {
   description = "ingestion-flink-output-s3"
   type        = string
+}
+
+variable "flink_task_family" {
+  description = "data-platform-flink-family"
+  type        = string
+}
+
+variable "flink_task_cpu" {
+  description = "flink_task_cpu"
+  type        = string
+}
+
+variable "flink_task_memory" {
+  description = "flink_task_memory"
+  type        = string
+}
+
+variable "flink_image_uri" {
+  description = "Flink Docker 镜像 URI"
+  type        = string
+  default     = "latest"
 }

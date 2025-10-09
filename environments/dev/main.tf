@@ -21,6 +21,7 @@ module "ingestion" {
   # --- 传入通用变量 ---
   project_name = var.project_name
   environment  = var.environment
+  aws_region = var.aws_region
 
   # --- 关键：连接两个模块 ---
   # 将 networking 模块的输出，作为 ingestion 模块的输入。
@@ -35,8 +36,11 @@ module "ingestion" {
   kafka_scram_users = var.kafka_scram_users
   msk_logs_bucket = var.msk_logs_bucket
   msk_logs_bucket_prefix = var.msk_logs_bucket_prefix
+  flink_task_family   = local.flink_task_family
+  flink_task_cpu   = var.flink_task_cpu
+  flink_task_memory   = var.flink_task_memory
 
-  producer_image_tag = var.producer_image_tag
+  flink_image_uri = var.flink_image_uri
   flink_output_bucket = var.flink_output_bucket
 }
 

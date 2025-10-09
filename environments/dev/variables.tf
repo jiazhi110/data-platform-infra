@@ -107,13 +107,35 @@ variable "msk_logs_bucket_prefix" {
   type        = string
 }
 
-variable "producer_image_tag" {
-  description = "要部署的 Producer Docker 镜像的标签。dev 环境常用 'latest'，生产环境应使用具体的版本号。"
+variable "flink_image_uri" {
+  description = "Flink Docker 镜像 URI"
   type        = string
   default     = "latest"
 }
 
 variable "flink_output_bucket" {
   description = "ingestion-flink-output-s3"
+  type        = string
+}
+
+variable "flink_task_family" {
+  description = "data-platform-flink-family"
+  type        = string
+  default     = "data-platform-dev-flink-family"
+}
+
+variable "flink_task_family_suffix" {
+  description = "data_platform_flink_task_family_suffix"
+  type        = string
+  default     = "family"
+}
+
+variable "flink_task_cpu" {
+  description = "flink_task_cpu"
+  type        = string
+}
+
+variable "flink_task_memory" {
+  description = "flink_task_memory"
   type        = string
 }

@@ -205,7 +205,7 @@ resource "aws_ecr_repository" "producer_repo" {
 # ECS task executed role
 resource "aws_iam_role" "ecs_task_execution_role" {
   name               = "${var.project_name}-${var.environment}-ecs-task-exec-role"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role.json
 }
 
 # 附加托管策略（AWS 官方推荐做法）托管策略：基础能力，省事、通用（CloudWatch Logs、ECR、S3 ReadOnly）。
@@ -258,8 +258,8 @@ resource "aws_ecs_task_definition" "producer_task" {
     # --- Job Manager 容器 ---
     {
       name      = "jobmanager",
-      # image     = var.flink_image_uri,
-      image     = data.aws_ecr_image.flink_image.image_uri,  # 这里用动态URI
+      image     = var.flink_image_uri,
+      # image     = data.aws_ecr_image.flink_image.image_uri,  # 这里用动态URI，这里用client payload 的 output parameter.
       essential = true, # 如果这个容器失败，整个 Task 会失败  essential：必要的
       #Flink 官方镜像里 JobManager/TaskManager 脚本 /opt/flink/bin/jobmanager.sh 或 taskmanager.sh 默认需要一个参数 start-foreground 才会以前台方式启动  start-foreground :启动前台
       command   = ["start-foreground"],
@@ -287,14 +287,14 @@ resource "aws_ecs_task_definition" "producer_task" {
     {
       name      = "taskmanager",
       # image     = var.flink_image_uri,
-      image     = data.aws_ecr_image.flink_image.image_uri,  # 这里用动态URI
+      image     = var.flink_image_uri,  # 这里用ingestion_kafka_flink 的 flink_image_uri.
       essential = true, # 在 dev 环境，建议也设为 true，确保集群的完整性
       command   = ["start-foreground"],
       entryPoint = [
         "/opt/flink/bin/taskmanager.sh"
       ],
       # 容器间可以通过 localhost 通信，但为了清晰，我们明确指向 jobmanager
-      dependsOn = [ 
+      dependsOn = [
         { containerName = "jobmanager", condition = "START" }
       ],
       environment = [
@@ -319,7 +319,6 @@ resource "aws_cloudwatch_log_group" "producer_logs" {
   retention_in_days = 14
 }
 
-
 # ECS 服务 (Service): 运行并维护“蓝图”的实例
 # 确保始终有指定数量的任务在运行，并负责网络配置
 resource "aws_ecs_service" "producer_service" {
@@ -338,4 +337,3 @@ resource "aws_ecs_service" "producer_service" {
   # 确保在任务定义更新后，服务能自动部署新版本
   force_new_deployment = true
 }
-
