@@ -3,6 +3,9 @@
 # AWS Region for development
 aws_region = "us-east-1"
 
+# project name
+project_name = "data-platform"
+
 # Environment name
 environment = "dev"
 
