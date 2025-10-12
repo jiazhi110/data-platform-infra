@@ -12,7 +12,7 @@ environment = "dev"
 # VPC CIDR for development
 vpc_cidr = "10.10.0.0/16"
 
-public_subnets_cidr  = ["10.10.1.0/24", "10.10.2.0/24", "10.10.3.0/24"]
+public_subnets_cidr = ["10.10.1.0/24", "10.10.2.0/24", "10.10.3.0/24"]
 
 private_subnets_cidr = ["10.10.11.0/24", "10.10.12.0/24", "10.10.13.0/24"]
 
@@ -62,7 +62,7 @@ kafka_scram_users = {
 }
 
 client_security_group_ids = [
-  "sg-0abc123456789def0"  # EC2/ECS/Glue/Lambda的安全组ID
+  "sg-0abc123456789def0" # EC2/ECS/Glue/Lambda的安全组ID
 ]
 
 # cloudwatch s3 logs

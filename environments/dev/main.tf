@@ -4,14 +4,14 @@
 module "networking" {
   source = "../../modules/networking"
 
-  vpc_cidr    = var.vpc_cidr
-  project_name = var.project_name
-  environment = var.environment
-  aws_region = var.aws_region
-  azs         = local.azs
-  az_count   = var.az_count
+  vpc_cidr             = var.vpc_cidr
+  project_name         = var.project_name
+  environment          = var.environment
+  aws_region           = var.aws_region
+  azs                  = local.azs
+  az_count             = var.az_count
   private_subnets_cidr = var.private_subnets_cidr
-  public_subnets_cidr = var.public_subnets_cidr
+  public_subnets_cidr  = var.public_subnets_cidr
 }
 
 # Module 2: Ingestion Kafka Flink ---
@@ -21,7 +21,7 @@ module "ingestion" {
   # --- 传入通用变量 ---
   project_name = var.project_name
   environment  = var.environment
-  aws_region = var.aws_region
+  aws_region   = var.aws_region
 
   # --- 关键：连接两个模块 ---
   # 将 networking 模块的输出，作为 ingestion 模块的输入。
@@ -30,17 +30,17 @@ module "ingestion" {
 
   # --- 传入 ingestion 模块专属的变量 ---
   kafka_broker_instance_type = var.kafka_broker_instance_type
-  msk_cluster_name   = local.msk_cluster_name
-  msk_sg_name   = local.msk_sg_name
-  msk_scram_name   = local.msk_scram_name
-  kafka_scram_users = var.kafka_scram_users
-  msk_logs_bucket = var.msk_logs_bucket
-  msk_logs_bucket_prefix = var.msk_logs_bucket_prefix
-  flink_task_family   = local.flink_task_family
-  flink_task_cpu   = var.flink_task_cpu
-  flink_task_memory   = var.flink_task_memory
+  msk_cluster_name           = local.msk_cluster_name
+  msk_sg_name                = local.msk_sg_name
+  msk_scram_name             = local.msk_scram_name
+  kafka_scram_users          = var.kafka_scram_users
+  msk_logs_bucket            = var.msk_logs_bucket
+  msk_logs_bucket_prefix     = var.msk_logs_bucket_prefix
+  flink_task_family          = local.flink_task_family
+  flink_task_cpu             = var.flink_task_cpu
+  flink_task_memory          = var.flink_task_memory
 
-  flink_image_uri = var.flink_image_uri
+  flink_image_uri     = var.flink_image_uri
   flink_output_bucket = var.flink_output_bucket
 }
 
