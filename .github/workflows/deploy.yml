@@ -42,7 +42,9 @@ jobs:
   #====================================================
   deploy-dev:
     # 条件：仅当触发事件中的环境字段为 'dev' 时运行
-    if: github.event.client_payload.environment == 'dev'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'dev')
     runs-on: ubuntu-latest
     environment: dev # 关联到名为 'dev' 的 GitHub Environment
     permissions:
@@ -85,7 +87,9 @@ jobs:
   #==   生成计划并将其作为“密封的蓝图”上传          ==
   #====================================================
   plan-prod:
-    if: github.event.client_payload.environment == 'prod'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod') ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'prod')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -138,7 +142,9 @@ jobs:
   apply-prod:
     # 依赖：必须等待 plan-prod 作业成功完成
     needs: plan-prod
-    if: github.event.client_payload.environment == 'prod'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod') ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'prod')
     runs-on: ubuntu-latest
     
     # 关键：关联到 Prod 环境，触发手动审批规则
