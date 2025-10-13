@@ -30,6 +30,7 @@ module "ingestion" {
 
   # --- 传入 ingestion 模块专属的变量 ---
   kafka_broker_instance_type = var.kafka_broker_instance_type
+  kafka_version              = var.kafka_version
   msk_cluster_name           = local.msk_cluster_name
   msk_sg_name                = local.msk_sg_name
   msk_scram_name             = local.msk_scram_name

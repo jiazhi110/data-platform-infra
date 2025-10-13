@@ -58,7 +58,6 @@ variable "kafka_broker_instance_type" {
 variable "kafka_version" {
   description = "Apache Kafka 的版本。"
   type        = string
-  default     = "2.8.1"
 }
 
 variable "msk_cluster_name" {

@@ -51,6 +51,12 @@ variable "kafka_broker_instance_type" {
   type        = string
 }
 
+variable "kafka_version" {
+  description = "Apache Kafka 的版本。"
+  type        = string
+  default     = "3.8.x"
+}
+
 variable "ecs_cluster_name_suffix" {
   description = "Cluster name suffix (optional). Full name will be built from project/env."
   type        = string

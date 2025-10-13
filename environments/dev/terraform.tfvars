@@ -22,6 +22,8 @@ az_count = 3
 # --- ingestion 模块变量赋值 ---
 kafka_broker_instance_type = "kafka.t3.small"
 
+kafka_version = "3.8.x"
+
 # EC2 Instance Type for development
 # ec2_instance_type = "t3.medium"
 
@@ -44,7 +46,7 @@ msk_scram_name_prefix = "AmazonMSK"
 flink_task_family_suffix = "family"
 
 # ECR task cpu for development 512:.5cpu
-flink_task_cpu = "521"
+flink_task_cpu = "512"
 
 # ECR task memory for development 3072:3GB
 flink_task_memory = "3072"
