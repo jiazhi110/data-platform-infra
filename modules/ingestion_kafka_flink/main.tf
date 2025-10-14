@@ -118,7 +118,8 @@ resource "aws_s3_bucket" "msk_logs_bucket" {
   # 添加一个随机后缀，确保桶名在全局唯一
   # 如果不加，当别人也用了这个名字时，你的 apply 可能会失败
   # bucket_prefix = "my-justin-data-platform-logs-" 
-  bucket_prefix = var.msk_logs_bucket_prefix
+  # Conflicting configuration arguments
+  # bucket_prefix = var.msk_logs_bucket_prefix
 
   tags = {
     Name = "${var.project_name}-msk-logs-bucket"
