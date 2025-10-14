@@ -109,13 +109,28 @@ resource "aws_cloudwatch_log_group" "msk" {
   retention_in_days = 14
 }
 
+# ===================================================================
+# S3 Bucket for MSK Broker Logs
+# ===================================================================
+resource "aws_s3_bucket" "msk_logs_bucket" {
+  bucket = var.msk_logs_bucket
+
+  # 添加一个随机后缀，确保桶名在全局唯一
+  # 如果不加，当别人也用了这个名字时，你的 apply 可能会失败
+  # bucket_prefix = "my-justin-data-platform-logs-" 
+  bucket_prefix = var.msk_logs_bucket_prefix
+
+  tags = {
+    Name = "${var.project_name}-msk-logs-bucket"
+  }
+}
 
 # --- MSK Kafka 集群 ---
 # 创建核心的 Kafka 集群。
 resource "aws_msk_cluster" "kafka_cluster" {
   cluster_name           = var.msk_cluster_name
   kafka_version          = var.kafka_version
-  number_of_broker_nodes = length(var.private_subnet_ids) # 每个子网一个 broker，实现高可用
+  number_of_broker_nodes = length(var.private_subnet_ids) # 每个子网一个 broker，实现高可用,一个 Broker 对应一台 EC2 实例。
 
   broker_node_group_info {
     instance_type          = var.kafka_broker_instance_type
@@ -165,8 +180,7 @@ resource "aws_msk_cluster" "kafka_cluster" {
       }
       s3 {
         enabled = true
-        bucket  = var.msk_logs_bucket
-        prefix  = var.msk_logs_bucket_prefix
+        bucket  = aws_s3_bucket.msk_logs_bucket.id
       }
     }
   }

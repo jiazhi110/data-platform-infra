@@ -85,10 +85,11 @@ variable "kafka_scram_users" {
   description = "SCRAM username/password map"
 }
 
-variable "client_security_group_ids" {
-  type    = list(string)
-  default = []   # 这里可以留空，或者在 tfvars 里填
-}
+# instead of dynamic ECR sg
+# variable "client_security_group_ids" {
+#   type    = list(string)
+#   default = []   # 这里可以留空，或者在 tfvars 里填
+# }
 
 variable "msk_logs_bucket" {
   description = "MSK logs s3 bucket"

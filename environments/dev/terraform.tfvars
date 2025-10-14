@@ -63,9 +63,10 @@ kafka_scram_users = {
   "test_user"  = "DevTestUserPassword456!"
 }
 
-client_security_group_ids = [
-  "sg-0abc123456789def0" # EC2/ECS/Glue/Lambda的安全组ID
-]
+# instead of dynamic ECR sg
+# client_security_group_ids = [
+#   "sg-0abc123456789def0" # EC2/ECS/Glue/Lambda的安全组ID
+# ]
 
 # cloudwatch s3 logs
 msk_logs_bucket = "my-justin-data-platform-logs-bucket"
