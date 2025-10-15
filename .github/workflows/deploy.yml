@@ -64,6 +64,18 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # --- 新增的调试步骤 ---
+      - name: List files for debugging
+        # 确保工作目录和你 Terraform 的一致！
+        working-directory: ./environments/dev # <-- ‼️ 替换成你的真实路径
+        run: |
+          echo "--- Listing all files recursively ---"
+          ls -R
+          echo "--- Checking content of terraform.tfvars ---"
+          # 如果文件存在，就打印它的内容；如果不存在，就报告错误
+          cat terraform.tfvars || echo "!!! terraform.tfvars NOT FOUND !!!"
+      # --- 调试步骤结束 ---
+
       - name: Terraform Init, Validate & Fmt
         working-directory: ./environments/dev
         run: |
