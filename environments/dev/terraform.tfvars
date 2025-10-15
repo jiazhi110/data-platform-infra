@@ -58,8 +58,8 @@ flink_task_memory = "3072"
 # 在真实项目中，这些密码应该使用更安全的方式注入，
 # 但对于 dev 环境，写在这里是可接受的。
 # 确保使用强密码！
-kafka_scram_users = {
-  "username" = "flink_user!"
+kafka_scram_user = {
+  "username" = "flink_user"
   "password"  = "DevFlinkUserPassword123!"
 }
 

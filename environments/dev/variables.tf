@@ -98,9 +98,14 @@ variable "glue_database_name_suffix" {
   default     = "glue_db"
 }
 
-variable "kafka_scram_users" {
+variable "kafka_scram_user" {
   description = "Kafka scram users name"
-  type        = map(string)
+  type        = map(object({
+    username = string
+    password = string
+  }))
+  # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
+  sensitive = true
 }
 
 variable "msk_logs_bucket" {
