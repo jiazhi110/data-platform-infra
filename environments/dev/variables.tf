@@ -100,7 +100,7 @@ variable "glue_database_name_suffix" {
 
 variable "kafka_scram_user" {
   description = "Kafka scram users name"
-  type        = map(object({
+  type = map(object({
     username = string
     password = string
   }))
