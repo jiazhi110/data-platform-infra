@@ -90,19 +90,6 @@ jobs:
           # Terraform 会自动识别以 TF_VAR_ 开头的环境变量
           TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
         run: |
-          # --- 这是新增的终极调试步骤 ---
-          echo "=========================================================="
-          echo "=== DEBUG: Forcing Terraform to reveal variable's value ==="
-          echo "=========================================================="
-          
-          # 我们使用 terraform console 命令，直接让它打印出变量经过 jsonencode 后的值
-          # 这是无可辩驳的证据
-          terraform console <<< 'jsonencode(var.kafka_scram_users)'
-          
-          echo "=========================================================="
-          echo "=== DEBUG: End of variable check. Starting Plan & Apply ==="
-          echo "=========================================================="
-          
           # 在 Dev 环境，直接 Plan 并自动 Apply,无需再写 -var 参数
           terraform plan
           terraform apply -auto-approve

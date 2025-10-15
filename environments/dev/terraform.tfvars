@@ -59,8 +59,8 @@ flink_task_memory = "3072"
 # 但对于 dev 环境，写在这里是可接受的。
 # 确保使用强密码！
 kafka_scram_users = {
-  "flink_user" = "DevFlinkUserPassword123!"
-  "test_user"  = "DevTestUserPassword456!"
+  "username" = "flink_user!"
+  "password"  = "DevFlinkUserPassword123!"
 }
 
 # instead of dynamic ECR sg
