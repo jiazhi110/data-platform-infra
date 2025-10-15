@@ -82,10 +82,10 @@ variable "msk_scram_name" {
 
 variable "kafka_scram_user" {
   description = "Kafka scram users name"
-  type        = map(object({
+  type        = object({
     username = string
     password = string
-  }))
+  })
   # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
   sensitive = false
 }
