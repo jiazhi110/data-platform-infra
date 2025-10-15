@@ -105,7 +105,7 @@ variable "kafka_scram_user" {
     password = string
   }))
   # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
-  sensitive = true
+  # sensitive = true
 }
 
 variable "msk_logs_bucket" {
