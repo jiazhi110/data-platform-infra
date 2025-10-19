@@ -110,3 +110,123 @@ resource "aws_ecs_service" "producer_service" {
   # 确保在任务定义更新后，服务能自动部署新版本
   force_new_deployment = true
 }
+
+# CloudWatch 日志组 - 更新名称以适配 Flink
+resource "aws_cloudwatch_log_group" "flink_logs" {
+  name              = "/ecs/${var.flink_task_family}"
+  retention_in_days = 14
+}
+
+# 创建 ECS client SG（示例）
+resource "aws_security_group" "ecs_tasks_sg" {
+  name   = "${var.environment}-ecs-tasks-sg"
+  vpc_id = var.vpc_id
+
+  # 允许出站（通常默认允许所有出站；显式写也行）
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${var.environment}-ecs-tasks-sg" }
+}
+
+# ECS task executed role
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name               = "${var.project_name}-${var.environment}-ecs-task-exec-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role.json
+}
+
+# 附加托管策略（AWS 官方推荐做法）托管策略：基础能力，省事、通用（CloudWatch Logs、ECR、S3 ReadOnly）。
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# ECS task role
+resource "aws_iam_role" "ecs_task_role" {
+  name               = "${var.project_name}-${var.environment}-ecs-task-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
+}
+
+# 为这个角色创建一个内联策略，明确授予读取特定 Secret 的权限
+# 专门用来创建并附加 inline policy，只能属于某一个角色
+resource "aws_iam_role_policy" "read_kafka_secret_policy" {
+  name   = "ReadKafkaSecretPolicy"
+  role   = aws_iam_role.ecs_task_role.id
+  policy = data.aws_iam_policy_document.ecs_task_policy.json
+}
+
+# 1. ECS 任务执行角色 (Task Execution Role)  trust policy
+# 这个角色授予 ECS Agent 权限，让它能帮你做事，比如：
+# - 从 ECR 拉取你的 Docker 镜像
+# - 将应用的日志发送到 CloudWatch
+data "aws_iam_policy_document" "ecs_task_execution_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+# 生成 AssumeRole Policy ECS Task Role    信任策略（Trust Policy）
+data "aws_iam_policy_document" "ecs_task_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    effect  = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+# 最小权限策略                            权限策略（Permission Policy）
+data "aws_iam_policy_document" "ecs_task_policy" {
+  statement {
+    sid    = "ReadKafkaSecret"
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+    resources = [aws_secretsmanager_secret.msk_scram_credentials.arn]
+  }
+
+  statement {
+    sid    = "KafkaClusterAccess"
+    effect = "Allow"
+    actions = [
+      "kafka:DescribeCluster",
+      "kafka:GetBootstrapBrokers",
+      "kafka-cluster:Connect",
+      "kafka-cluster:DescribeTopic",
+      "kafka-cluster:ReadData",
+      "kafka-cluster:WriteData",
+      "kafka-cluster:DescribeGroup"
+    ]
+    # resources = ["*"] # 建议限定到你创建的 MSK Cluster ARN
+    resources = [aws_msk_cluster.kafka_cluster.arn]
+  }
+
+  statement {
+    sid    = "S3Access"
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:ListBucket"
+    ]
+    resources = [
+      "arn:aws:s3:::${var.flink_output_bucket}",
+      "arn:aws:s3:::${var.flink_output_bucket}/*"
+    ]
+  }
+}
+
+
+

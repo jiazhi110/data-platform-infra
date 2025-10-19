@@ -15,3 +15,19 @@ output "msk_cluster_arn" {
   description = "创建的 MSK 集群的 ARN。"
   value       = aws_msk_cluster.kafka_cluster.arn
 }
+
+output "mock_data_schedule_rule_name" {
+  description = "The name of the EventBridge rule for the mock data task."
+  value       = aws_cloudwatch_event_rule.mock_data_schedule_rule[0].name
+}
+
+output "ecs_cluster_name" {
+  description = "The name of the ECS cluster."
+  value       = aws_ecs_cluster.main_cluster.name
+}
+
+output "mock_data_task_family" {
+  description = "The family of the mock data ECS task."
+  value       = aws_ecs_task_definition.mock_data_task.family
+}
+
