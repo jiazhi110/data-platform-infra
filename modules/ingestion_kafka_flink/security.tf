@@ -42,7 +42,7 @@ resource "aws_security_group_rule" "ecs_to_msk_ingress" {
   source_security_group_id = aws_security_group.ecs_tasks_sg.id
   # for_each = toset(var.client_security_group_ids)
   # source_security_group_id = each.value # for_each 的值，固定写法，如果有变量赋值给for_each,那么，后面就可以用each.value的写法赋值。
-  from_port                = 9096 #SASL/SCRAM 常用 9096 (内部)；TLS 用 9094；IAM 用 9098
-  to_port                  = 9096
-  protocol                 = "tcp"
+  from_port = 9096 #SASL/SCRAM 常用 9096 (内部)；TLS 用 9094；IAM 用 9098
+  to_port   = 9096
+  protocol  = "tcp"
 }

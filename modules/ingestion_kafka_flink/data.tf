@@ -59,7 +59,7 @@ data "aws_iam_policy_document" "msk_data_cmk_policy" {
     sid    = "AllowMSKServiceRoleUse"
     effect = "Allow"
     principals {
-      type        = "AWS"
+      type = "AWS"
       # 服务关联角色路径（推荐使用 service-linked role ARN）
       identifiers = [
         "arn:aws:iam::${data.aws_caller_identity.me.account_id}:role/aws-service-role/kafka.amazonaws.com/AWSServiceRoleForKafka"

@@ -26,9 +26,3 @@ resource "aws_cloudwatch_log_group" "flink_logs" {
   name              = "/ecs/${var.flink_task_family}"
   retention_in_days = 14
 }
-
-# CloudWatch 日志组，用于收集容器日志
-resource "aws_cloudwatch_log_group" "producer_logs" {
-  name              = "/ecs/${var.project_name}-producer"
-  retention_in_days = 14
-}

@@ -20,28 +20,28 @@ resource "aws_ecs_cluster" "main_cluster" {
 }
 
 resource "aws_ecs_task_definition" "producer_task" {
-  family                   = var.flink_task_family
+  family = var.flink_task_family
   #对 Fargate 来说 必须，因为 Fargate 不允许使用 bridge 或 host 模式
   # 对 EC2 launch type 可以用其他模式，但 Fargate 只能 awsvpc
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   # cpu                      = "256"  # 0.25 vCPU
   # memory                   = "512"  # 512 MB
-  cpu                      = var.flink_task_cpu
-  memory                   = var.flink_task_memory
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  cpu                = var.flink_task_cpu
+  memory             = var.flink_task_memory
+  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn      = aws_iam_role.ecs_task_role.arn
 
   # 容器定义
   container_definitions = jsonencode([
     # --- Job Manager 容器 ---
     {
-      name      = "jobmanager",
-      image     = var.flink_image_uri,
+      name  = "jobmanager",
+      image = var.flink_image_uri,
       # image     = data.aws_ecr_image.flink_image.image_uri,  # 这里用动态URI，这里用client payload 的 output parameter.
       essential = true, # 如果这个容器失败，整个 Task 会失败  essential：必要的
       #Flink 官方镜像里 JobManager/TaskManager 脚本 /opt/flink/bin/jobmanager.sh 或 taskmanager.sh 默认需要一个参数 start-foreground 才会以前台方式启动  start-foreground :启动前台
-      command   = ["start-foreground"],
+      command = ["start-foreground"],
       entryPoint = [
         "/opt/flink/bin/jobmanager.sh"
       ],
@@ -64,10 +64,10 @@ resource "aws_ecs_task_definition" "producer_task" {
     },
     # --- Task Manager 容器 ---
     {
-      name      = "taskmanager",
+      name = "taskmanager",
       # image     = var.flink_image_uri,
-      image     = var.flink_image_uri,  # 这里用ingestion_kafka_flink 的 flink_image_uri.
-      essential = true, # 在 dev 环境，建议也设为 true，确保集群的完整性
+      image     = var.flink_image_uri, # 这里用ingestion_kafka_flink 的 flink_image_uri.
+      essential = true,                # 在 dev 环境，建议也设为 true，确保集群的完整性
       command   = ["start-foreground"],
       entryPoint = [
         "/opt/flink/bin/taskmanager.sh"

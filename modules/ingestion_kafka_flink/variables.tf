@@ -10,7 +10,7 @@ variable "environment" {
   description = "Environment name (dev, prod)"
   type        = string
   validation {
-    condition     = contains(["dev","prod"], var.environment)
+    condition     = contains(["dev", "prod"], var.environment)
     error_message = "environment must be one of: dev, prod"
   }
 }
@@ -82,7 +82,7 @@ variable "msk_scram_name" {
 
 variable "kafka_scram_user" {
   description = "Kafka scram users name"
-  type        = object({
+  type = object({
     username = string
     password = string
   })

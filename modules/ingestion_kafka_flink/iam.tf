@@ -19,7 +19,7 @@ resource "aws_iam_role" "ecs_task_role" {
 # 为这个角色创建一个内联策略，明确授予读取特定 Secret 的权限
 # 专门用来创建并附加 inline policy，只能属于某一个角色
 resource "aws_iam_role_policy" "read_kafka_secret_policy" {
-  name = "ReadKafkaSecretPolicy"
-  role = aws_iam_role.ecs_task_role.id
-  policy      = data.aws_iam_policy_document.ecs_task_policy.json
+  name   = "ReadKafkaSecretPolicy"
+  role   = aws_iam_role.ecs_task_role.id
+  policy = data.aws_iam_policy_document.ecs_task_policy.json
 }

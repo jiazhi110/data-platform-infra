@@ -15,13 +15,13 @@ resource "aws_msk_cluster" "kafka_cluster" {
   number_of_broker_nodes = length(var.private_subnet_ids) # 每个子网一个 broker，实现高可用,一个 Broker 对应一台 EC2 实例。
 
   broker_node_group_info {
-    instance_type          = var.kafka_broker_instance_type
-    client_subnets         = var.private_subnet_ids
-    security_groups        = [aws_security_group.msk_sg.id]
+    instance_type   = var.kafka_broker_instance_type
+    client_subnets  = var.private_subnet_ids
+    security_groups = [aws_security_group.msk_sg.id]
 
     storage_info {
       ebs_storage_info {
-        volume_size = 10   # 单位 GB
+        volume_size = 10 # 单位 GB
       }
     }
   }
@@ -57,7 +57,7 @@ resource "aws_msk_cluster" "kafka_cluster" {
   logging_info {
     broker_logs {
       cloudwatch_logs {
-        enabled = true
+        enabled   = true
         log_group = aws_cloudwatch_log_group.msk.name
       }
       s3 {

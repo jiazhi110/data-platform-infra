@@ -43,6 +43,6 @@ variable "az_count" {
 
 variable "azs" {
   description = "List of availability zones to create subnets in"
-  type = list(string)
+  type        = list(string)
 }
 
