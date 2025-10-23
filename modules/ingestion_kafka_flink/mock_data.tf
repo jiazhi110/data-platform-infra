@@ -53,14 +53,13 @@ resource "aws_ecs_task_definition" "mock_data_task" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn  # Principle of Least Privilege 最小权限原则
   task_role_arn            = aws_iam_role.mock_data_task_role.arn
 
   container_definitions = jsonencode([
     {
       name      = "mock-data-generator"
       image     = var.mock_data_image
-      command   = var.mock_data_command
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -87,7 +86,7 @@ resource "aws_cloudwatch_event_rule" "mock_data_schedule_rule" {
 
 resource "aws_cloudwatch_event_target" "mock_data_task_target" {
   count     = var.mock_data_schedule == null ? 0 : 1
-  rule      = aws_cloudwatch_event_rule.mock_data_schedule_rule[0].name
+  rule      = aws_cloudwatch_event_rule.mock_data_schedule_rule[0].name # 当你在资源中使用 count 后，Terraform 就会把这个资源视为一个列表（list），即使你只创建 1 个，它也变成了一个“数组形式”的资源。
   arn       = aws_ecs_cluster.main_cluster.arn
   role_arn  = aws_iam_role.eventbridge_to_ecs_role.arn # Assuming you have a role for EventBridge to run ECS tasks
 
@@ -96,7 +95,8 @@ resource "aws_cloudwatch_event_target" "mock_data_task_target" {
     launch_type         = "FARGATE"
     network_configuration {
       subnets          = var.private_subnet_ids
-      assign_public_ip = false
+      security_groups  = [aws_security_group.ecs_tasks_sg.id]
+      assign_public_ip = false # 在私有网络中运行，更安全
     }
   }
 }
@@ -118,8 +118,27 @@ resource "aws_iam_role" "eventbridge_to_ecs_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "eventbridge_to_ecs_policy" {
-  role       = aws_iam_role.eventbridge_to_ecs_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceEventsRole"
+resource "aws_iam_policy" "eventbridge_passrole_policy" {
+  name = "${var.project_name}-${var.environment}-eventbridge-passrole"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "iam:PassRole",
+        Resource = [
+          aws_iam_role.ecs_task_execution_role.arn,
+          aws_iam_role.mock_data_task_role.arn
+        ]
+      }
+    ]
+  })
 }
+
+resource "aws_iam_role_policy_attachment" "eventbridge_passrole_attach" {
+  role       = aws_iam_role.eventbridge_to_ecs_role.name
+  # policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceEventsRole"  # Use a custom PoLP version instead.
+  policy_arn = aws_iam_policy.eventbridge_passrole_policy.arn
+}
+
 

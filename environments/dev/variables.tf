@@ -150,3 +150,17 @@ variable "flink_task_memory" {
   description = "flink_task_memory"
   type        = string
 }
+
+# --- Mock Data Generation ---
+
+variable "mock_data_image" {
+  description = "Docker image for the mock data generator task."
+  type        = string
+  default     = "ubuntu:latest" # Placeholder
+}
+
+variable "mock_data_schedule" {
+  description = "Cron expression for the mock data generation schedule. If null, the rule is disabled."
+  type        = string
+  default     = null
+}

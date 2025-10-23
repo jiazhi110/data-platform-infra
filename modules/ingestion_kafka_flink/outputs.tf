@@ -11,6 +11,11 @@ output "kafka_bootstrap_brokers_plaintext" {
   value     = aws_msk_cluster.kafka_cluster.bootstrap_brokers
 }
 
+output "ecs_tasks_sg_id" {
+  description = "ecs task 的 sg id"
+  value = aws_security_group.ecs_tasks_sg.id
+}
+
 output "msk_cluster_arn" {
   description = "创建的 MSK 集群的 ARN。"
   value       = aws_msk_cluster.kafka_cluster.arn
