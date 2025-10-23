@@ -21,11 +21,6 @@ output "msk_cluster_arn" {
   value       = aws_msk_cluster.kafka_cluster.arn
 }
 
-output "mock_data_schedule_rule_name" {
-  description = "The name of the EventBridge rule for the mock data task."
-  value       = aws_cloudwatch_event_rule.mock_data_schedule_rule[0].name
-}
-
 output "ecs_cluster_name" {
   description = "The name of the ECS cluster."
   value       = aws_ecs_cluster.main_cluster.name
