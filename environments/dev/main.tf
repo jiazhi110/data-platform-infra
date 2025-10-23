@@ -44,7 +44,7 @@ module "ingestion" {
   flink_image_uri     = var.flink_image_uri
   flink_output_bucket = var.flink_output_bucket
 
-  
+
 }
 
 # # Module 3: Top Produce ETL
