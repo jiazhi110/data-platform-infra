@@ -48,7 +48,7 @@ resource "aws_iam_role_policy" "mock_data_task_policy" {
 # ------------------------------------------------------------------------------
 
 resource "aws_ecs_task_definition" "mock_data_task" {
-  family                   = "${var.project_name}-mock-data-task"
+  family                   = "${var.project_name}-${var.environment}-mock-data-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
