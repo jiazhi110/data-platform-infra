@@ -59,7 +59,7 @@ resource "aws_ecs_task_definition" "mock_data_task" {
   container_definitions = jsonencode([
     {
       name      = "mock-data-generator"
-      image     = var.mock_data_image
+      image     = data.aws_ssm_parameter.mockdata_image_url.value
       logConfiguration = {
         logDriver = "awslogs"
         options = {

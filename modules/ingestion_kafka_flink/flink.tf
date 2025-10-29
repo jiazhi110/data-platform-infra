@@ -37,7 +37,7 @@ resource "aws_ecs_task_definition" "producer_task" {
     # --- Job Manager 容器 ---
     {
       name  = "jobmanager",
-      image = var.flink_image_uri,
+      image = data.aws_ssm_parameter.flink_image_url.value,
       # image     = data.aws_ecr_image.flink_image.image_uri,  # 这里用动态URI，这里用client payload 的 output parameter.
       essential = true, # 如果这个容器失败，整个 Task 会失败  essential：必要的
       #Flink 官方镜像里 JobManager/TaskManager 脚本 /opt/flink/bin/jobmanager.sh 或 taskmanager.sh 默认需要一个参数 start-foreground 才会以前台方式启动  start-foreground :启动前台
@@ -66,7 +66,7 @@ resource "aws_ecs_task_definition" "producer_task" {
     {
       name = "taskmanager",
       # image     = var.flink_image_uri,
-      image     = var.flink_image_uri, # 这里用ingestion_kafka_flink 的 flink_image_uri.
+      image     = data.aws_ssm_parameter.flink_image_url.value, # 这里用ingestion_kafka_flink 的 flink_image_uri.
       essential = true,                # 在 dev 环境，建议也设为 true，确保集群的完整性
       command   = ["start-foreground"],
       entryPoint = [

@@ -126,19 +126,7 @@ variable "flink_task_memory" {
   type        = string
 }
 
-variable "flink_image_uri" {
-  description = "Flink Docker 镜像 URI"
-  type        = string
-  default     = "latest"
-}
 
-# --- Mock Data Generation ---
-
-variable "mock_data_image" {
-  description = "Docker image for the mock data generator task."
-  type        = string
-  default     = "ubuntu:latest" # Placeholder
-}
 
 
 

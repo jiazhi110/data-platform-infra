@@ -1,21 +1,21 @@
 name: Deploy Flink Application
 
 # 核心触发器：监听来自外部仓库的 dispatch 事件
-on:
-  repository_dispatch:
-    # 只响应事件类型为 'flink-deploy' 的触发
-    types: [flink-deploy]
+# on:
+#   repository_dispatch:
+#     # 只响应事件类型为 'flink-deploy' 的触发
+#     types: [flink-deploy]
 
   # 触发器 2: 允许在 GitHub UI 上手动触发此 workflow
   workflow_dispatch:
     inputs:
       # 我们在这里定义手动触发时需要输入的参数
       # 这些参数的名字和默认值都来自于你提供的上游 dispatch log
-      image_uri:
-        description: '【用于测试】要部署的完整 Docker 镜像 URI'
-        required: true
-        default: '366019841267.dkr.ecr.us-east-1.amazonaws.com/ingestion_kafka_flink:latest'
-        type: string
+      # image_uri:
+      #   description: '【用于测试】要部署的完整 Docker 镜像 URI'
+      #   required: true
+      #   default: '366019841267.dkr.ecr.us-east-1.amazonaws.com/ingestion_kafka_flink:latest'
+      #   type: string
       environment:
         description: '要部署的目标环境 (dev 或 prod)'
         required: true
@@ -24,16 +24,16 @@ on:
         options:
           - dev
           - prod
-      ref:
-        description: '【用于测试】来源分支 (例如 develop)'
-        required: false
-        default: 'develop'
-        type: string
-      sha:
-        description: '【用于测试】来源 Commit SHA (用于追溯)'
-        required: false
-        default: 'c073ede61bd92b16c18272398d0b66cc0263b87f'
-        type: string
+#       ref:
+#         description: '【用于测试】来源分支 (例如 develop)'
+#         required: false
+#         default: 'develop'
+#         type: string
+#       sha:
+#         description: '【用于测试】来源 Commit SHA (用于追溯)'
+#         required: false
+#         default: 'c073ede61bd92b16c18272398d0b66cc0263b87f'
+#         type: string
 
 jobs:
   #====================================================
@@ -42,9 +42,10 @@ jobs:
   #====================================================
   deploy-dev:
     # 条件：仅当触发事件中的环境字段为 'dev' 时运行
-    if: >-
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
-      (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'dev')
+    # if: >-
+    #   (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
+    #   (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'dev')
+    if: github.event.inputs.environment == 'dev'
     runs-on: ubuntu-latest
     environment: dev # 关联到名为 'dev' 的 GitHub Environment
     permissions:
@@ -85,10 +86,10 @@ jobs:
 
       - name: Terraform Plan & Apply (Dev)
         working-directory: ./environments/dev
-        env:
-          # 使用三元表达式智能判断数据来源，并将其设置为 Terraform 变量
-          # Terraform 会自动识别以 TF_VAR_ 开头的环境变量
-          TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
+#         env:
+#           # 使用三元表达式智能判断数据来源，并将其设置为 Terraform 变量
+#           # Terraform 会自动识别以 TF_VAR_ 开头的环境变量
+#           TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
         run: |
           # 在 Dev 环境，直接 Plan 并自动 Apply,无需再写 -var 参数
           terraform plan
@@ -98,10 +99,7 @@ jobs:
   #==         生产环境部署第一步：规划 (Plan)        ==
   #==   生成计划并将其作为“密封的蓝图”上传          ==
   #====================================================
-  plan-prod:
-    if: >-
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod') ||
-      (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'prod')
+    if: github.event.inputs.environment == 'prod'
     runs-on: ubuntu-latest
     permissions:
       id-token: write

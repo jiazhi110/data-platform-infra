@@ -41,7 +41,7 @@ module "ingestion" {
   flink_task_cpu             = var.flink_task_cpu
   flink_task_memory          = var.flink_task_memory
 
-  flink_image_uri     = var.flink_image_uri
+
   flink_output_bucket = var.flink_output_bucket
   mock_data_schedule  = var.mock_data_schedule
 
