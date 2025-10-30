@@ -1,7 +1,7 @@
 name: Deploy Flink Application
 
 # 核心触发器：监听来自外部仓库的 dispatch 事件
-# on:
+on:
 #   repository_dispatch:
 #     # 只响应事件类型为 'flink-deploy' 的触发
 #     types: [flink-deploy]
