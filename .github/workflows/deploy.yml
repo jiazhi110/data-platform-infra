@@ -6,6 +6,10 @@ on:
 #     # 只响应事件类型为 'flink-deploy' 的触发
 #     types: [flink-deploy]
 
+  schedule:
+    # 每天 UTC 5:00 (东八区时间 13:00) 自动触发 dev 环境部署
+    - cron: '0 5 * * *'
+
   # 触发器 2: 允许在 GitHub UI 上手动触发此 workflow
   workflow_dispatch:
     inputs:
@@ -45,7 +49,11 @@ jobs:
     # if: >-
     #   (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
     #   (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'dev')
-    if: github.event.inputs.environment == 'dev'
+    # if: github.event.inputs.environment == 'dev'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
+      (github.event_name == 'schedule' && github.ref == 'refs/heads/main')
+
     runs-on: ubuntu-latest
     environment: dev # 关联到名为 'dev' 的 GitHub Environment
     permissions:

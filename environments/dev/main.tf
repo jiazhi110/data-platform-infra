@@ -35,7 +35,6 @@ module "ingestion" {
   msk_sg_name                = local.msk_sg_name
   msk_scram_name             = local.msk_scram_name
   kafka_scram_user           = var.kafka_scram_user
-  msk_logs_bucket            = var.msk_logs_bucket
   msk_logs_bucket_prefix     = var.msk_logs_bucket_prefix
   flink_task_family          = local.flink_task_family
   flink_task_cpu             = var.flink_task_cpu

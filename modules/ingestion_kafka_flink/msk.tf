@@ -93,7 +93,7 @@ resource "aws_cloudwatch_log_group" "msk" {
 # S3 Bucket for MSK Broker Logs
 # ===================================================================
 resource "aws_s3_bucket" "msk_logs_bucket" {
-  bucket = var.msk_logs_bucket
+  bucket = "${var.project_name}-msk-logs-${var.environment}-${data.aws_caller_identity.me.account_id}"
 
   tags = {
     Name = "${var.project_name}-msk-logs-bucket"
@@ -233,11 +233,8 @@ data "aws_iam_policy_document" "msk_data_cmk_policy" {
     sid    = "AllowMSKServiceRoleUse"
     effect = "Allow"
     principals {
-      type = "AWS"
-      # 服务关联角色路径（推荐使用 service-linked role ARN）
-      identifiers = [
-        "arn:aws:iam::${data.aws_caller_identity.me.account_id}:role/aws-service-role/kafka.amazonaws.com/AWSServiceRoleForKafka"
-      ]
+      type        = "Service"
+      identifiers = ["kafka.amazonaws.com"]
     }
     actions = [
       "kms:Encrypt",

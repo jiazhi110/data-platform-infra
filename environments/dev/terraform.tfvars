@@ -68,9 +68,6 @@ kafka_scram_user = {
 #   "sg-0abc123456789def0" # EC2/ECS/Glue/Lambda的安全组ID
 # ]
 
-# cloudwatch s3 logs
-msk_logs_bucket = "my-justin-data-platform-logs-bucket"
-
 msk_logs_bucket_prefix = "msk/dev"
 
 flink_output_bucket = "ingestion-flink-output-s3"

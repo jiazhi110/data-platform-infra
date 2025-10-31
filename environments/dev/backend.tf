@@ -6,6 +6,6 @@ terraform {
     key            = "dev/terraform.tfstate"                   # 在 S3 里的路径/文件名
     region         = "us-east-1"                               # S3 所在的 AWS 区域
     encrypt        = true                                      # 是否启用服务端加密 (AES-256)
-    dynamodb_table = "terraform-state-lock-dev"                # DynamoDB 表，用来做“状态锁定”
+    use_lockfile   = true                                      # 使用 S3 原生锁定，不再需要 DynamoDB
   }
 }
