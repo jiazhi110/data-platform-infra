@@ -60,10 +60,10 @@ resource "aws_internet_gateway" "igw" {
 resource "aws_subnet" "public" {
   count = length(var.public_subnets_cidr)
 
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnets_cidr[count.index]
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.public_subnets_cidr[count.index]
   # 将每个子网轮流放置在不同的可用区中，提高容灾能力。var.azs[count.index % var.az_count],但是这种写法并不主流。this approach is not really mainstream.
-  availability_zone       = var.azs[count.index]
+  availability_zone = var.azs[count.index]
   # 自动为在这个子网中启动的实例分配公有 IP 地址。
   map_public_ip_on_launch = true
 

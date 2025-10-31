@@ -10,7 +10,7 @@ variable "environment" {
   description = "Environment name (dev, prod)"
   type        = string
   validation {
-    condition     = contains(["dev","prod"], var.environment)
+    condition     = contains(["dev", "prod"], var.environment)
     error_message = "environment must be one of: dev, prod"
   }
 }
@@ -58,7 +58,6 @@ variable "kafka_broker_instance_type" {
 variable "kafka_version" {
   description = "Apache Kafka 的版本。"
   type        = string
-  default     = "2.8.1"
 }
 
 variable "msk_cluster_name" {
@@ -81,15 +80,21 @@ variable "msk_scram_name" {
   }
 }
 
-variable "kafka_scram_users" {
-  type        = map(string)
-  description = "SCRAM username/password map"
+variable "kafka_scram_user" {
+  description = "Kafka scram users name"
+  type = object({
+    username = string
+    password = string
+  })
+  # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
+  sensitive = false
 }
 
-variable "client_security_group_ids" {
-  type    = list(string)
-  default = []   # 这里可以留空，或者在 tfvars 里填
-}
+# instead of dynamic ECR sg
+# variable "client_security_group_ids" {
+#   type    = list(string)
+#   default = []   # 这里可以留空，或者在 tfvars 里填
+# }
 
 variable "msk_logs_bucket" {
   description = "MSK logs s3 bucket"
@@ -121,8 +126,18 @@ variable "flink_task_memory" {
   type        = string
 }
 
-variable "flink_image_uri" {
-  description = "Flink Docker 镜像 URI"
+variable "flink_image_url" {
+  description = "The URL of the Flink image."
   type        = string
-  default     = "latest"
+}
+
+variable "mockdata_image_url" {
+  description = "The URL of the mock data image."
+  type        = string
+}
+
+variable "mock_data_schedule" {
+  description = "Cron expression for the mock data generation schedule. If null, the rule is disabled."
+  type        = string
+  default     = null
 }

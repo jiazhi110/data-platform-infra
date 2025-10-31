@@ -12,7 +12,7 @@ environment = "dev"
 # VPC CIDR for development
 vpc_cidr = "10.10.0.0/16"
 
-public_subnets_cidr  = ["10.10.1.0/24", "10.10.2.0/24", "10.10.3.0/24"]
+public_subnets_cidr = ["10.10.1.0/24", "10.10.2.0/24", "10.10.3.0/24"]
 
 private_subnets_cidr = ["10.10.11.0/24", "10.10.12.0/24", "10.10.13.0/24"]
 
@@ -21,6 +21,8 @@ az_count = 3
 
 # --- ingestion 模块变量赋值 ---
 kafka_broker_instance_type = "kafka.t3.small"
+
+kafka_version = "3.8.x"
 
 # EC2 Instance Type for development
 # ec2_instance_type = "t3.medium"
@@ -44,7 +46,7 @@ msk_scram_name_prefix = "AmazonMSK"
 flink_task_family_suffix = "family"
 
 # ECR task cpu for development 512:.5cpu
-flink_task_cpu = "521"
+flink_task_cpu = "512"
 
 # ECR task memory for development 3072:3GB
 flink_task_memory = "3072"
@@ -56,14 +58,15 @@ flink_task_memory = "3072"
 # 在真实项目中，这些密码应该使用更安全的方式注入，
 # 但对于 dev 环境，写在这里是可接受的。
 # 确保使用强密码！
-kafka_scram_users = {
-  "flink_user" = "DevFlinkUserPassword123!"
-  "test_user"  = "DevTestUserPassword456!"
+kafka_scram_user = {
+  "username" = "flink_user"
+  "password" = "DevFlinkUserPassword123!"
 }
 
-client_security_group_ids = [
-  "sg-0abc123456789def0"  # EC2/ECS/Glue/Lambda的安全组ID
-]
+# instead of dynamic ECR sg
+# client_security_group_ids = [
+#   "sg-0abc123456789def0" # EC2/ECS/Glue/Lambda的安全组ID
+# ]
 
 # cloudwatch s3 logs
 msk_logs_bucket = "my-justin-data-platform-logs-bucket"
@@ -71,3 +74,7 @@ msk_logs_bucket = "my-justin-data-platform-logs-bucket"
 msk_logs_bucket_prefix = "msk/dev"
 
 flink_output_bucket = "ingestion-flink-output-s3"
+
+# 示例：设置为每天凌晨 1 点 (UTC 时间) 运行
+# mock_data_schedule = null
+mock_data_schedule = "cron(0 1 * * ? *)"

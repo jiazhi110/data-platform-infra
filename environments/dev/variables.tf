@@ -14,7 +14,7 @@ variable "environment" {
   description = "Environment name (dev, prod)"
   type        = string
   validation {
-    condition     = contains(["dev","prod"], var.environment)
+    condition     = contains(["dev", "prod"], var.environment)
     error_message = "environment must be one of: dev, prod"
   }
 }
@@ -49,6 +49,12 @@ variable "az_count" {
 variable "kafka_broker_instance_type" {
   description = "dev 环境中 MSK Broker 的实例类型。"
   type        = string
+}
+
+variable "kafka_version" {
+  description = "Apache Kafka 的版本。"
+  type        = string
+  default     = "3.8.x"
 }
 
 variable "ecs_cluster_name_suffix" {
@@ -92,9 +98,14 @@ variable "glue_database_name_suffix" {
   default     = "glue_db"
 }
 
-variable "kafka_scram_users" {
+variable "kafka_scram_user" {
   description = "Kafka scram users name"
-  type        = map(string)
+  type = object({
+    username = string
+    password = string
+  })
+  # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
+  sensitive = false
 }
 
 variable "msk_logs_bucket" {
@@ -138,4 +149,18 @@ variable "flink_task_cpu" {
 variable "flink_task_memory" {
   description = "flink_task_memory"
   type        = string
+}
+
+# --- Mock Data Generation ---
+
+variable "mock_data_image" {
+  description = "Docker image for the mock data generator task."
+  type        = string
+  default     = "ubuntu:latest" # Placeholder
+}
+
+variable "mock_data_schedule" {
+  description = "Cron expression for the mock data generation schedule. If null, the rule is disabled."
+  type        = string
+  default     = null
 }
