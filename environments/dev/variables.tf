@@ -108,10 +108,6 @@ variable "kafka_scram_user" {
   sensitive = false
 }
 
-variable "msk_logs_bucket" {
-  description = "MSK logs s3 bucket"
-  type        = string
-}
 
 variable "msk_logs_bucket_prefix" {
   description = "MSK logs s3 bucket prefix"

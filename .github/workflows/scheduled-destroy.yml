@@ -1,0 +1,38 @@
+name: Scheduled Destroy (Dev)
+
+on:
+  schedule:
+    # 每天 UTC 12:00 (东八区时间 20:00) 自动触发 dev 环境销毁
+    - cron: '0 12 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  destroy-dev:
+    name: Destroy Dev Environment
+    if: github.ref == 'refs/heads/main' # 确保只在主分支上运行
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write   # OIDC 权限
+      contents: read    # 拉取代码权限
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.DEV_AWS_ROLE_ARN }} # 重用dev环境的Role
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ./environments/dev
+        run: terraform init -reconfigure
+
+      - name: Terraform Destroy
+        working-directory: ./environments/dev
+        run: terraform destroy -auto-approve
