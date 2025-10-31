@@ -1,3 +1,7 @@
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 data "aws_ssm_parameter" "flink_image_url" {
   name = "/data-platform/dev/ingestion/flink_image_url"
 }

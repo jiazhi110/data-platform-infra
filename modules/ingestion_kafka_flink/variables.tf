@@ -126,9 +126,15 @@ variable "flink_task_memory" {
   type        = string
 }
 
+variable "flink_image_url" {
+  description = "The URL of the Flink image."
+  type        = string
+}
 
-
-
+variable "mockdata_image_url" {
+  description = "The URL of the mock data image."
+  type        = string
+}
 
 variable "mock_data_schedule" {
   description = "Cron expression for the mock data generation schedule. If null, the rule is disabled."

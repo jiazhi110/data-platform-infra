@@ -14,7 +14,7 @@ on:
       # image_uri:
       #   description: '【用于测试】要部署的完整 Docker 镜像 URI'
       #   required: true
-      #   default: '366019841267.dkr.ecr.us-east-1.amazonaws.com/ingestion_kafka_flink:latest'
+      #   default: '461636397270.dkr.ecr.us-east-1.amazonaws.com/ingestion_kafka_flink:latest'
       #   type: string
       environment:
         description: '要部署的目标环境 (dev 或 prod)'

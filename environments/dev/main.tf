@@ -40,6 +40,8 @@ module "ingestion" {
   flink_task_family          = local.flink_task_family
   flink_task_cpu             = var.flink_task_cpu
   flink_task_memory          = var.flink_task_memory
+  flink_image_url            = data.aws_ssm_parameter.flink_image_url.value
+  mockdata_image_url         = data.aws_ssm_parameter.mockdata_image_url.value
 
 
   flink_output_bucket = var.flink_output_bucket
