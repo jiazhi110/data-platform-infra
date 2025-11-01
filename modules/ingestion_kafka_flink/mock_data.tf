@@ -144,8 +144,8 @@ resource "aws_iam_policy" "eventbridge_passrole_policy" {
 
 resource "aws_iam_role_policy_attachment" "eventbridge_passrole_attach" {
   role       = aws_iam_role.eventbridge_to_ecs_role.name
-  # policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceEventsRole"  # Use a custom PoLP version instead.
-  policy_arn = aws_iam_policy.eventbridge_passrole_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceEventsRole"  # Use a custom PoLP version instead.
+  # policy_arn = aws_iam_policy.eventbridge_passrole_policy.arn
 }
 
 
