@@ -165,6 +165,7 @@ resource "aws_secretsmanager_secret" "msk_scram_credentials" {
   name        = var.msk_scram_name
   description = "SCRAM credentials for MSK cluster"
   kms_key_id  = aws_kms_key.msk_secrets_cmk.arn
+  recovery_window_in_days = 0 # default 默认值为 30 天,记得生产的话去掉这个。
 }
 
 # 将传入的用户名密码变量（一个 map）转换为 Secrets Manager 所需的 JSON 字符串格式。

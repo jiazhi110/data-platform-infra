@@ -53,6 +53,12 @@ resource "aws_ecs_task_definition" "producer_task" {
         { containerPort = 8081, hostPort = 8081, protocol = "tcp" }, # Web UI
         { containerPort = 6123, hostPort = 6123, protocol = "tcp" }  # RPC Port
       ],
+      linuxParameters = {
+        initProcessEnabled = true # 用于配置容器的 Linux 特性，确保一些特定的进程管理功能（如 init 进程）正常工作。
+      },
+      executeCommandConfiguration = {
+        enabled = true # 启用在容器内执行命令的功能，允许你通过 aws ecs execute-command 在容器中执行交互式命令进行调试和管理。
+      },
       logConfiguration = {
         logDriver = "awslogs",
         options = {

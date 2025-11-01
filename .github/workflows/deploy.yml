@@ -52,7 +52,7 @@ jobs:
     # if: github.event.inputs.environment == 'dev'
     if: >-
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
-      (github.event_name == 'schedule' && github.ref == 'refs/heads/main')
+      (github.event_name == 'schedule' || github.event.inputs.environment == 'dev')
 
     runs-on: ubuntu-latest
     environment: dev # 关联到名为 'dev' 的 GitHub Environment
@@ -108,7 +108,7 @@ jobs:
   #==   生成计划并将其作为“密封的蓝图”上传          ==
   #====================================================
   plan-prod:
-    if: github.event.inputs.environment == 'prod'
+    if: github.event_name != 'schedule' && github.event.inputs.environment == 'prod'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -164,7 +164,7 @@ jobs:
     # if: >-
     #   (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod') ||
     #   (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'prod')
-    if: github.event.inputs.environment == 'prod'
+    if: github.event_name != 'schedule' && github.event.inputs.environment == 'prod'
     runs-on: ubuntu-latest
     
     # 关键：关联到 Prod 环境，触发手动审批规则

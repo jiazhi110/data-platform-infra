@@ -74,4 +74,6 @@ flink_output_bucket = "ingestion-flink-output-s3"
 
 # 示例：设置为每天凌晨 1 点 (UTC 时间) 运行
 # mock_data_schedule = null
-mock_data_schedule = "cron(0 1 * * ? *)"
+# mock_data_schedule = "cron(0 1 * * ? *)"
+# 每三分钟触发一次，用于测试。
+mock_data_schedule = "cron(0/3 * * * ? *)"

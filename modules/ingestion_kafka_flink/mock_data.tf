@@ -59,7 +59,13 @@ resource "aws_ecs_task_definition" "mock_data_task" {
   container_definitions = jsonencode([
     {
       name      = "mock-data-generator"
-      image     = var.mockdata_image_url
+      image     = var.mockdata_image_url,
+      linuxParameters = {
+        initProcessEnabled = true # 用于配置容器的 Linux 特性，确保一些特定的进程管理功能（如 init 进程）正常工作。
+      },
+      executeCommandConfiguration = {
+        enabled = true # 启用在容器内执行命令的功能，允许你通过 aws ecs execute-command 在容器中执行交互式命令进行调试和管理。
+      }
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -81,7 +87,8 @@ resource "aws_cloudwatch_event_rule" "mock_data_schedule_rule" {
   name                = "${var.project_name}-${var.environment}-mock-data-schedule"
   description         = "Scheduled trigger for the mock data generator task."
   schedule_expression = var.mock_data_schedule
-  state               = "DISABLED" # Disabled by default, enabled by the manual workflow
+  # state               = "DISABLED" # Disabled by default, enabled by the manual workflow
+  state               = "ENABLED" # Disabled by default, enabled by the manual workflow
 }
 
 resource "aws_cloudwatch_event_target" "mock_data_task_target" {
