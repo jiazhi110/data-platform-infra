@@ -236,6 +236,18 @@ data "aws_iam_policy_document" "ecs_task_policy" {
       "arn:aws:s3:::${var.flink_output_bucket}/*"
     ]
   }
+
+  statement {
+    sid    = "SSMAccess"
+    effect = "Allow"
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    resources = ["*"]
+  }
 }
 
 
