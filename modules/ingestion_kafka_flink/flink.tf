@@ -86,6 +86,9 @@ resource "aws_ecs_task_definition" "producer_task" {
         { name = "FLINK_PROPERTIES_jobmanager.rpc.address", value = "jobmanager" },
         { name = "FLINK_PROPERTIES_taskmanager.numberOfTaskSlots", value = "2" }
       ],
+      executeCommandConfiguration = {
+        enabled = true
+      },
       logConfiguration = {
         logDriver = "awslogs",
         options = {
@@ -106,6 +109,7 @@ resource "aws_ecs_service" "producer_service" {
   task_definition = aws_ecs_task_definition.producer_task.arn
   desired_count   = 1 # 我们希望始终运行 1 个 producer 任务
   launch_type     = "FARGATE"
+  enable_execute_command = true
 
   network_configuration {
     subnets          = var.private_subnet_ids

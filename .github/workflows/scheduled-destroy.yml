@@ -2,14 +2,14 @@ name: Scheduled Destroy (Dev)
 
 on:
   schedule:
-    # 每天 UTC 12:00 (东八区时间 20:00) 自动触发 dev 环境销毁
-    - cron: '0 12 * * *'
+    # 每天 UTC 11:00 (东八区时间 19:00) 自动触发 dev 环境销毁
+    - cron: '0 11 * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:
   destroy-dev:
     name: Destroy Dev Environment
-    if: github.ref == 'refs/heads/main' # 确保只在主分支上运行
+    # if: github.ref == 'refs/heads/main' # 确保只在主分支上运行
     runs-on: ubuntu-latest
     environment: dev
     permissions:

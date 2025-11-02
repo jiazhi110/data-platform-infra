@@ -100,6 +100,7 @@ resource "aws_cloudwatch_event_target" "mock_data_task_target" {
   ecs_target {
     task_definition_arn = aws_ecs_task_definition.mock_data_task.arn
     launch_type         = "FARGATE"
+    enable_execute_command = true
     network_configuration {
       subnets          = var.private_subnet_ids
       security_groups  = [aws_security_group.ecs_tasks_sg.id]
