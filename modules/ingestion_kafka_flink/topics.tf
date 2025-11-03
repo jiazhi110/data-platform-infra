@@ -1,3 +1,13 @@
+# 授予当前 IAM 身份在 Kafka 集群中创建 Topic 的权限
+resource "kafka_acl" "terraform_topic_creator_acl" {
+  acl_principal       = "User:${data.aws_caller_identity.me.arn}"      # 这里的 User: 前缀是 Kafka ACL 的标准格式
+  acl_host            = "*"                                            # 允许从任何主机访问
+  acl_operation       = "Create"                                       # 允许执行创建操作
+  acl_permission_type = "Allow"                                        # 允许
+  resource_type       = "Topic"                                        # 针对 Topic 资源
+  resource_name       = "*"                                            # 针对所有 Topic (允许创建任何 Topic)
+}
+
 resource "kafka_topic" "produce_events" {
   name               = "ingestion.user.behavior.v1"
   partitions         = 3
