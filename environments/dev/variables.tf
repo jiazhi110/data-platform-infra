@@ -76,21 +76,21 @@ variable "msk_sg_name_suffix" {
   default     = "msk-dev-sg"
 }
 
-variable "msk_scram_name_prefix" {
-  description = "MSK scram name prefix"
-  type        = string
-  default     = "AmazonMSK"
-  validation {
-    condition     = can(regex("^AmazonMSK", var.msk_scram_name_prefix))
-    error_message = "msk_scram_name must start with 'AmazonMSK' as required by MSK SCRAM secret association."
-  }
-}
+# variable "msk_scram_name_prefix" {
+#   description = "MSK scram name prefix"
+#   type        = string
+#   default     = "AmazonMSK"
+#   validation {
+#     condition     = can(regex("^AmazonMSK", var.msk_scram_name_prefix))
+#     error_message = "msk_scram_name must start with 'AmazonMSK' as required by MSK SCRAM secret association."
+#   }
+# }
 
-variable "msk_scram_name_suffix" {
-  description = "MSK scram name suffix"
-  type        = string
-  default     = "msk-scram-credentials"
-}
+# variable "msk_scram_name_suffix" {
+#   description = "MSK scram name suffix"
+#   type        = string
+#   default     = "msk-scram-credentials"
+# }
 
 variable "glue_database_name_suffix" {
   description = "Glue database name suffix"
@@ -98,15 +98,15 @@ variable "glue_database_name_suffix" {
   default     = "glue_db"
 }
 
-variable "kafka_scram_user" {
-  description = "Kafka scram users name"
-  type = object({
-    username = string
-    password = string
-  })
-  # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
-  sensitive = false
-}
+# variable "kafka_scram_user" {
+#   description = "Kafka scram users name"
+#   type = object({
+#     username = string
+#     password = string
+#   })
+#   # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
+#   sensitive = false
+# }
 
 
 variable "msk_logs_bucket_prefix" {

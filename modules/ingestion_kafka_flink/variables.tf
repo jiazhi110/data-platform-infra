@@ -71,24 +71,24 @@ variable "msk_sg_name" {
   description = "Name of the MSK security group"
 }
 
-variable "msk_scram_name" {
-  type        = string
-  description = "Name of the MSK SCRAM secret"
-  validation {
-    condition     = can(regex("^AmazonMSK_", var.msk_scram_name))
-    error_message = "msk_scram_name must start with AmazonMSK_"
-  }
-}
+# variable "msk_scram_name" {
+#   type        = string
+#   description = "Name of the MSK SCRAM secret"
+#   validation {
+#     condition     = can(regex("^AmazonMSK_", var.msk_scram_name))
+#     error_message = "msk_scram_name must start with AmazonMSK_"
+#   }
+# }
 
-variable "kafka_scram_user" {
-  description = "Kafka scram users name"
-  type = object({
-    username = string
-    password = string
-  })
-  # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
-  sensitive = false
-}
+# variable "kafka_scram_user" {
+#   description = "Kafka scram users name"
+#   type = object({
+#     username = string
+#     password = string
+#   })
+#   # 标记这个变量或输出是“敏感信息”（Sensitive），Terraform 就不会在终端、日志或 plan/apply 输出结果里明文显示它的值。
+#   sensitive = false
+# }
 
 # instead of dynamic ECR sg
 # variable "client_security_group_ids" {

@@ -198,14 +198,14 @@ data "aws_iam_policy_document" "ecs_task_assume_role" {
 
 # 最小权限策略                            权限策略（Permission Policy）
 data "aws_iam_policy_document" "ecs_task_policy" {
-  statement {
-    sid    = "ReadKafkaSecret"
-    effect = "Allow"
-    actions = [
-      "secretsmanager:GetSecretValue"
-    ]
-    resources = [aws_secretsmanager_secret.msk_scram_credentials.arn]
-  }
+  # statement {
+  #   sid    = "ReadKafkaSecret"
+  #   effect = "Allow"
+  #   actions = [
+  #     "secretsmanager:GetSecretValue"
+  #   ]
+  #   resources = [aws_secretsmanager_secret.msk_scram_credentials.arn]
+  # }
 
   statement {
     sid    = "KafkaClusterAccess"

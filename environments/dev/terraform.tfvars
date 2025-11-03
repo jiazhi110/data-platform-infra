@@ -37,10 +37,10 @@ msk_cluster_name_suffix = "msk-dev-cluster"
 msk_sg_name_suffix = "msk-dev-sg"
 
 # MSK security scram credentials Name for development
-msk_scram_name_suffix = "msk-scram-credentials"
+# msk_scram_name_suffix = "msk-scram-credentials"
 
 # MSK security scram credentials Name for development
-msk_scram_name_prefix = "AmazonMSK"
+# msk_scram_name_prefix = "AmazonMSK"
 
 # ECR task definition Name for development
 flink_task_family_suffix = "family"
@@ -58,10 +58,10 @@ flink_task_memory = "3072"
 # 在真实项目中，这些密码应该使用更安全的方式注入，
 # 但对于 dev 环境，写在这里是可接受的。
 # 确保使用强密码！
-kafka_scram_user = {
-  "username" = "flink_user"
-  "password" = "DevFlinkUserPassword123!"
-}
+# kafka_scram_user = {
+#   "username" = "flink_user"
+#   "password" = "DevFlinkUserPassword123!"
+# }
 
 # instead of dynamic ECR sg
 # client_security_group_ids = [

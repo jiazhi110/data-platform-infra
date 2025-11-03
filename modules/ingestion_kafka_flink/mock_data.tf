@@ -87,8 +87,8 @@ resource "aws_cloudwatch_event_rule" "mock_data_schedule_rule" {
   name                = "${var.project_name}-${var.environment}-mock-data-schedule"
   description         = "Scheduled trigger for the mock data generator task."
   schedule_expression = var.mock_data_schedule
-  # state               = "DISABLED" # Disabled by default, enabled by the manual workflow
-  state               = "ENABLED" # Disabled by default, enabled by the manual workflow
+  state               = "DISABLED" # Disabled by default, enabled by the manual workflow
+  # state               = "ENABLED" # Disabled by default, enabled by the manual workflow
 }
 
 resource "aws_cloudwatch_event_target" "mock_data_task_target" {
