@@ -25,6 +25,14 @@ resource "aws_msk_cluster" "kafka_cluster" {
     }
   }
 
+  # # ⚠️ 仅用于开发/测试环境：启用 MSK 公网访问
+  # # 在生产环境中，请勿启用此配置，应使用私有网络连接
+  # connectivity_info {
+  #   public_access {
+  #     type = "SERVICE_PROVIDED_EIPS"
+  #   }
+  # }
+
   # 启用 TLS 加密。
   encryption_info {
     encryption_at_rest_kms_key_arn = aws_kms_key.msk_data_cmk.arn
@@ -96,6 +104,15 @@ resource "aws_security_group" "msk_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # # ⚠️ 仅用于开发/测试环境：允许公网访问 MSK
+  # # 在生产环境中，请勿启用此规则，应使用私有网络连接（如 VPN 或自托管 Runner）
+  # ingress {
+  #   from_port   = 9098
+  #   to_port     = 9098
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
+
   tags = {
     Name = var.msk_sg_name
   }
@@ -161,4 +178,19 @@ data "aws_iam_policy_document" "msk_data_cmk_policy" {
     ]
     resources = ["*"]
   }
+}
+
+# --- Runner Security Group --- 
+data "aws_security_group" "runner_sg" {
+  name = "launch-wizard-1"
+}
+
+resource "aws_security_group_rule" "runner_to_msk_ingress" {
+  type                     = "ingress"
+  security_group_id        = aws_security_group.msk_sg.id
+  source_security_group_id = data.aws_security_group.runner_sg.id
+  from_port                = 9098
+  to_port                  = 9098
+  protocol                 = "tcp"
+  description              = "Allow Ingress from GitHub Actions Runner"
 }

@@ -1,3 +1,19 @@
+terraform {
+  required_providers {
+    kafka = {
+      source  = "Mongey/kafka"
+      version = "~> 0.13.0"
+    }
+  }
+}
+
+provider "kafka" {
+  bootstrap_servers = split(",", aws_msk_cluster.kafka_cluster.bootstrap_brokers_sasl_iam)
+  tls_enabled       = true
+  sasl_mechanism    = "aws-iam"
+  sasl_aws_region   = var.aws_region
+}
+
 # 授予当前 IAM 身份在 Kafka 集群中创建 Topic 的权限
 resource "kafka_acl" "terraform_topic_creator_acl" {
   acl_principal       = "User:${data.aws_caller_identity.me.arn}"      # 这里的 User: 前缀是 Kafka ACL 的标准格式

@@ -10,7 +10,8 @@ jobs:
   destroy-dev:
     name: Destroy Dev Environment
     # if: github.ref == 'refs/heads/main' # 确保只在主分支上运行
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted  #self-hosted-runner
     environment: dev
     permissions:
       id-token: write   # OIDC 权限
