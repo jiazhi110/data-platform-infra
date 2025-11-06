@@ -43,8 +43,8 @@ module "ingestion" {
   mockdata_image_url     = data.aws_ssm_parameter.mockdata_image_url.value
 
 
-  flink_output_bucket = var.flink_output_bucket
-  mock_data_schedule  = var.mock_data_schedule
+  flink_output_bucket        = var.flink_output_bucket
+  mock_data_schedule         = var.mock_data_schedule
   runner_security_group_name = var.runner_security_group_name
 
 }
