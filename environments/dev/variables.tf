@@ -156,7 +156,12 @@ variable "mock_data_image" {
 }
 
 variable "mock_data_schedule" {
-  description = "Cron expression for the mock data generation schedule. If null, the rule is disabled."
+  description = "The schedule for the mock data generator."
   type        = string
   default     = null
+}
+
+variable "runner_security_group_name" {
+  description = "The name of the security group for the self-hosted runner."
+  type        = string
 }

@@ -182,7 +182,7 @@ data "aws_iam_policy_document" "msk_data_cmk_policy" {
 
 # --- Runner Security Group --- 
 data "aws_security_group" "runner_sg" {
-  name = "launch-wizard-1"
+  name = var.runner_security_group_name
 }
 
 resource "aws_security_group_rule" "runner_to_msk_ingress" {

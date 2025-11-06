@@ -45,6 +45,7 @@ module "ingestion" {
 
   flink_output_bucket = var.flink_output_bucket
   mock_data_schedule  = var.mock_data_schedule
+  runner_security_group_name = var.runner_security_group_name
 
 }
 

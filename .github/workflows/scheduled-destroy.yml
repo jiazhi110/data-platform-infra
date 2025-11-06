@@ -10,8 +10,7 @@ jobs:
   destroy-dev:
     name: Destroy Dev Environment
     # if: github.ref == 'refs/heads/main' # 确保只在主分支上运行
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted  #self-hosted-runner
+    runs-on: self-hosted
     environment: dev
     permissions:
       id-token: write   # OIDC 权限
@@ -36,4 +35,4 @@ jobs:
 
       - name: Terraform Destroy
         working-directory: ./environments/dev
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -target="module.ingestion"

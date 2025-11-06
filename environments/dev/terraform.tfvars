@@ -9,6 +9,20 @@ project_name = "data-platform"
 # Environment name
 environment = "dev"
 
+#   首先，您需要从 IANA (互联网号码分配局) 指定的三个私有 IPv4 地址块中选择一个。您不能随便编一个地址。
+
+#    * A 类: 10.0.0.0 to 10.255.255.255 (CIDR: 10.0.0.0/8)
+#        * 特点：地址空间最大，非常灵活。
+#        * 最常用：这是绝大多数公司和云项目的首选。因为它足够大，可以轻松地为不同的部门、环境、区域划分出完全不冲突的子范围。
+
+#    * B 类: 172.16.0.0 to 172.31.255.255 (CIDR: 172.16.0.0/12)
+#        * 特点：大小适中。
+#        * 常用度：也比较常用。AWS 的默认 VPC 就喜欢用这个范围内的地址（比如 172.31.0.0/16）。
+
+#    * C 类: 192.168.0.0 to 192.168.255.255 (CIDR: 192.168.0.0/16)
+#        * 特点：地址空间最小。
+#        * 常用度：在企业级项目中较少作为 VPC 的主 CIDR，因为它太小了。这个地址段更常见于家庭路由器、小型办公室网络或 Docker 容器网络。
+
 # VPC CIDR for development
 vpc_cidr = "10.10.0.0/16"
 
@@ -77,3 +91,6 @@ flink_output_bucket = "ingestion-flink-output-s3"
 # mock_data_schedule = "cron(0 1 * * ? *)"
 # 每三分钟触发一次，用于测试。
 mock_data_schedule = "cron(0/3 * * * ? *)"
+
+# Name of the security group for the self-hosted runner
+runner_security_group_name = "ingestion_ec2_workflow_seflhostedrunner"

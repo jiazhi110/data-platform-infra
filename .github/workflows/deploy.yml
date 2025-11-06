@@ -54,8 +54,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
       (github.event_name == 'schedule' || github.event.inputs.environment == 'dev')
 
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted  #self-hosted-runner
+    runs-on: self-hosted
     environment: dev # 关联到名为 'dev' 的 GitHub Environment
     permissions:
       id-token: write   # OIDC 权限
@@ -101,115 +100,5 @@ jobs:
 #           TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
         run: |
           # 在 Dev 环境，直接 Plan 并自动 Apply,无需再写 -var 参数
-          terraform plan
-          terraform apply -auto-approve
-
-  #====================================================
-  #==         生产环境部署第一步：规划 (Plan)        ==
-  #==   生成计划并将其作为“密封的蓝图”上传          ==
-  #====================================================
-  plan-prod:
-    if: github.event_name != 'schedule' && github.event.inputs.environment == 'prod'
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted  #self-hosted-runner
-    permissions:
-      id-token: write
-      contents: read
-
-    outputs:
-      tf_plan_artifact_name: ${{ steps.upload-artifact.outputs.artifact-name }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.PROD_AWS_ROLE_ARN }} # 使用 Prod 环境的 IAM Role
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init, Validate & Fmt
-        working-directory: ./environments/prod
-        run: |
-          terraform init
-          terraform validate
-          terraform fmt -check
-
-      - name: Terraform Plan (Prod)
-        working-directory: ./environments/prod
-        # env:
-        #   TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
-        run: |
-          # 关键：生成计划并将其保存到文件 tfplan 中
-          terraform plan -out=tfplan
-
-      - name: Upload Plan Artifact
-        id: upload-artifact
-        uses: actions/upload-artifact@v4
-        with:
-          # 将 tfplan 文件上传为一个工件 (artifact)
-          # 命名中包含 commit SHA，确保其唯一性
-          name: prod-tfplan-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sha || github.event.client_payload.sha }}
-          path: tfplan
-
-  #====================================================
-  #==      生产环境部署第二步：审批与应用 (Apply)    ==
-  #==     下载“密封的蓝图”，等待审批，然后执行       ==
-  #====================================================
-  apply-prod:
-    # 依赖：必须等待 plan-prod 作业成功完成
-    needs: plan-prod
-    # if: >-
-    #   (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod') ||
-    #   (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'prod')
-    if: github.event_name != 'schedule' && github.event.inputs.environment == 'prod'
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted  #self-hosted-runner
-    
-    # 关键：关联到 Prod 环境，触发手动审批规则
-    environment:
-      name: prod
-      url: '[https://console.aws.amazon.com/kinesisanalytics/home](https://console.aws.amazon.com/kinesisanalytics/home)' # (可选) 生产环境 Flink 控制台 URL
-
-    # 并发控制：确保同一时间只有一个生产部署在进行
-    concurrency:
-      group: prod-deployment
-      cancel-in-progress: false
-
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download Plan Artifact
-        uses: actions/download-artifact@v4
-        with:
-          # 下载由 plan-prod 作业上传的、精确匹配的“蓝图”
-          name: ${{ needs.plan-prod.outputs.tf_plan_artifact_name }}
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.PROD_AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        
-      - name: Terraform Init
-        working-directory: ./environments/prod
-        run: terraform init
-
-      - name: Terraform Apply (Prod)
-        working-directory: ./environments/prod
-        run: |
-          # 关键：直接应用下载的 tfplan 文件
-          # 这确保了执行的变更与规划阶段看到的完全一致
-          terraform apply -input=false tfplan
+          terraform plan -target="module.ingestion"
+          terraform apply -auto-approve -target="module.ingestion"

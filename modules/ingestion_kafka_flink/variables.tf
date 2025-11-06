@@ -16,7 +16,12 @@ variable "environment" {
 }
 
 variable "aws_region" {
-  description = "AWS region to deploy resources"
+  description = "The AWS region to deploy resources in."
+  type        = string
+}
+
+variable "runner_security_group_name" {
+  description = "The name of the security group used by the self-hosted runner EC2 instance."
   type        = string
 }
 
