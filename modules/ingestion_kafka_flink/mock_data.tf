@@ -17,6 +17,8 @@ data "aws_iam_policy_document" "mock_data_task_assume_role" {
   }
 }
 
+# 信任策略 (Trust Policy)
+# Assume Role Policy（信任策略）：你设置了角色的信任策略，告诉 AWS 只有ECS 任务可以假定这个角色来执行任务。这是身份验证的部分，确保只有 ECS 服务才可以使用这个角色。
 resource "aws_iam_role" "mock_data_task_role" {
   name               = "${var.project_name}-${var.environment}-mock-data-task-role"
   assume_role_policy = data.aws_iam_policy_document.mock_data_task_assume_role.json
@@ -35,12 +37,28 @@ data "aws_iam_policy_document" "mock_data_task_policy" {
       aws_msk_cluster.kafka_cluster.arn
     ]
   }
+
+  statement {
+    actions = [
+      "ssm:PutParameter",
+      "ssm:GetParameter"
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.me.account_id}:parameter/data-platform/${var.environment}/kafka/*"
+    ]
+  }
 }
 
-resource "aws_iam_role_policy" "mock_data_task_policy" {
-  name   = "MockDataTaskPolicy"
-  role   = aws_iam_role.mock_data_task_role.id
+# 权限策略 (Permissions Policy)
+# Permission Policy（权限策略）：你还定义了角色的权限策略，告诉 AWS 这个角色可以访问Kafka 集群和SSM 参数。这部分控制的是角色可以做什么操作，也就是角色拥有的权限。
+resource "aws_iam_policy" "mock_data_task_policy" {
+  name   = "${var.project_name}-${var.environment}-MockDataTaskPolicy"
   policy = data.aws_iam_policy_document.mock_data_task_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "mock_data_task_attachment" {
+  role       = aws_iam_role.mock_data_task_role.name
+  policy_arn = aws_iam_policy.mock_data_task_policy.arn
 }
 
 # ------------------------------------------------------------------------------

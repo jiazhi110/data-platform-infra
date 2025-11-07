@@ -194,3 +194,18 @@ resource "aws_security_group_rule" "runner_to_msk_ingress" {
   protocol                 = "tcp"
   description              = "Allow Ingress from GitHub Actions Runner"
 }
+
+# --- SSM Parameters for MSK Bootstrap Brokers ---
+resource "aws_ssm_parameter" "msk_bootstrap_brokers_public" {
+  name  = "/${var.project_name}/${var.environment}/kafka/bootstrap_brokers_public"
+  type  = "String"
+  value = aws_msk_cluster.kafka_cluster.bootstrap_brokers_public_sasl_iam
+  overwrite = true
+}
+
+resource "aws_ssm_parameter" "msk_bootstrap_brokers_private" {
+  name  = "/${var.project_name}/${var.environment}/kafka/bootstrap_brokers_private"
+  type  = "String"
+  value = aws_msk_cluster.kafka_cluster.bootstrap_brokers_sasl_iam
+  overwrite = true
+}
