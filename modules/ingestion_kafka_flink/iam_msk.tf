@@ -118,6 +118,7 @@ resource "aws_security_group" "msk_sg" {
   }
 }
 
+
 # create per-client ingress rules (client SGs passed in)
 resource "aws_security_group_rule" "ecs_to_msk_ingress" {
   type                     = "ingress"
