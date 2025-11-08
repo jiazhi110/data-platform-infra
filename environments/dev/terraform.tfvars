@@ -93,4 +93,4 @@ flink_output_bucket = "ingestion-flink-output-s3"
 mock_data_schedule = "cron(0/3 * * * ? *)"
 
 # Name of the security group for the self-hosted runner
-runner_security_group_name = "ingestion_ec2_workflow_seflhostedrunner"
+runner_security_group_name = "ingestion_ec2_workflow_seflhostedrunner_sg"

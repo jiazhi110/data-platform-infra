@@ -35,4 +35,5 @@ jobs:
 
       - name: Terraform Destroy
         working-directory: ./environments/dev
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -target="module.ingestion"
+        # run: terraform destroy -auto-approve"
