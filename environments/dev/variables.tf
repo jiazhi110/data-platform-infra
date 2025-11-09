@@ -45,6 +45,16 @@ variable "az_count" {
   }
 }
 
+variable "public_subnet_ids" {
+  description = "List of public subnet IDs for the VPC."
+  type        = list(string)
+}
+
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs for the VPC."
+  type        = list(string)
+}
+
 # ---ingestion 模块声明变量 ---
 variable "kafka_broker_instance_type" {
   description = "dev 环境中 MSK Broker 的实例类型。"

@@ -38,6 +38,11 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
+variable "public_subnet_ids" {
+  description = "List of public subnet IDs for the VPC, used for public-facing resources like ALBs."
+  type        = list(string)
+}
+
 # --- MSK Kafka EC2, 为了后续在EC2上面执行ingest ---
 
 # variable "ec2_instance_type" {

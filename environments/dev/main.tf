@@ -26,6 +26,7 @@ module "ingestion" {
   # --- 关键：连接两个模块 ---
   # 将 networking 模块的输出，作为 ingestion 模块的输入。
   vpc_id             = module.networking.vpc_id
+  public_subnet_ids  = module.networking.public_subnet_ids
   private_subnet_ids = module.networking.private_subnet_ids
 
   # --- 传入 ingestion 模块专属的变量 ---
