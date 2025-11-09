@@ -192,13 +192,13 @@ resource "aws_security_group" "ecs_tasks_sg" {
 
   # Reason for adding: To allow public access to the Flink UI on port 8081.
   # WARNING: This exposes the Flink UI to the entire internet. Use with caution, especially in non-development environments.
-  # ingress {
-  #   description = "Allow public access to Flink UI"
-  #   from_port   = 8081
-  #   to_port     = 8081
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"] # 允许任何 IP 访问
-  # }
+  ingress {
+    description = "Allow public access to Flink UI"
+    from_port   = 8081
+    to_port     = 8081
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # 允许任何 IP 访问
+  }
 }
 
 # ECS task executed role
