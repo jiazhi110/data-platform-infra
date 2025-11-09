@@ -112,9 +112,12 @@ resource "aws_ecs_service" "producer_service" {
   enable_execute_command = true
 
   network_configuration {
-    subnets          = var.private_subnet_ids
+    # Reason for change: Directly exposing Flink UI via public IP for development/debugging.
+    # Original: subnets          = var.private_subnet_ids
+    # Original: assign_public_ip = false
+    subnets          = var.public_subnet_ids # 改为使用公共子网
     security_groups  = [aws_security_group.ecs_tasks_sg.id]
-    assign_public_ip = false # 我们的 producer 在私有网络中运行，更安全
+    assign_public_ip = true # 启用公网 IP 分配
   }
 
   # 确保在任务定义更新后，服务能自动部署新版本
@@ -186,6 +189,16 @@ resource "aws_security_group" "ecs_tasks_sg" {
   # }
 
   tags = { Name = "${var.environment}-ecs-tasks-sg" }
+
+  # Reason for adding: To allow public access to the Flink UI on port 8081.
+  # WARNING: This exposes the Flink UI to the entire internet. Use with caution, especially in non-development environments.
+  ingress {
+    description = "Allow public access to Flink UI"
+    from_port   = 8081
+    to_port     = 8081
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # 允许任何 IP 访问
+  }
 }
 
 # ECS task executed role
