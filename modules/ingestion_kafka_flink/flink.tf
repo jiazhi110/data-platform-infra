@@ -120,13 +120,12 @@ resource "aws_ecs_service" "producer_service" {
   # 确保在任务定义更新后，服务能自动部署新版本
   force_new_deployment = true
 
-  # Reason for adding: To connect the ECS service to the Application Load Balancer,
-  # allowing the ALB to route traffic to the Flink JobManager container.
-  load_balancer {
-    target_group_arn = aws_lb_target_group.flink_ui_tg.arn
-    container_name   = "jobmanager" # 必须与容器定义中的 Flink JobManager 容器名称完全匹配
-    container_port   = 8081
-  }
+  # Reason for commenting out: The ALB is disabled, so the service cannot be attached to it.
+  # load_balancer {
+  #   target_group_arn = aws_lb_target_group.flink_ui_tg.arn
+  #   container_name   = "jobmanager" # 必须与容器定义中的 Flink JobManager 容器名称完全匹配
+  #   container_port   = 8081
+  # }
 }
 
 # CloudWatch 日志组 - 更新名称以适配 Flink
@@ -136,33 +135,33 @@ resource "aws_cloudwatch_log_group" "flink_logs" {
 }
 
 # --- Security Group for ALB ---
-# Reason for adding: To provide a dedicated security group for the Application Load Balancer,
-# controlling its ingress and egress traffic separately.
-resource "aws_security_group" "alb_sg" {
-  name        = "${var.project_name}-${var.environment}-alb-sg"
-  description = "Security group for the Flink UI ALB"
-  vpc_id      = var.vpc_id
-
-  # 允许所有公网流量访问 HTTP 80 端口
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # 允许所有出站流量
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-alb-sg"
-  }
-}
+# Reason for commenting out: The current AWS account does not support creating Load Balancers.
+# This section is disabled until the account permissions are resolved.
+# resource "aws_security_group" "alb_sg" {
+#   name        = "${var.project_name}-${var.environment}-alb-sg"
+#   description = "Security group for the Flink UI ALB"
+#   vpc_id      = var.vpc_id
+# 
+#   # 允许所有公网流量访问 HTTP 80 端口
+#   ingress {
+#     from_port   = 80
+#     to_port     = 80
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# 
+#   # 允许所有出站流量
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# 
+#   tags = {
+#     Name = "${var.project_name}-${var.environment}-alb-sg"
+#   }
+# }
 
 # 创建 ECS client SG（示例）
 resource "aws_security_group" "ecs_tasks_sg" {
@@ -177,14 +176,14 @@ resource "aws_security_group" "ecs_tasks_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Reason for adding: To allow traffic from the Application Load Balancer to the Flink UI on port 8081.
-  ingress {
-    description     = "Allow traffic from ALB to Flink UI"
-    from_port       = 8081
-    to_port         = 8081
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id] # 只允许来自我们新创建的 ALB 安全组的流量
-  }
+  # Reason for commenting out: The ALB is disabled, so this ingress rule is no longer needed.
+  # ingress {
+  #   description     = "Allow traffic from ALB to Flink UI"
+  #   from_port       = 8081
+  #   to_port         = 8081
+  #   protocol        = "tcp"
+  #   security_groups = [aws_security_group.alb_sg.id] # 只允许来自我们新创建的 ALB 安全组的流量
+  # }
 
   tags = { Name = "${var.environment}-ecs-tasks-sg" }
 }
@@ -300,52 +299,52 @@ data "aws_iam_policy_document" "ecs_task_policy" {
 # Application Load Balancer for Flink UI
 # ------------------------------------------------------------------------------
 
-# Reason for adding: To create a stable, public endpoint for accessing the Flink Web UI.
-# The ALB will forward traffic from the internet to the Flink JobManager container.
+# Reason for commenting out: The current AWS account does not support creating Load Balancers.
+# This entire section is disabled until the account permissions are resolved.
 
-# 1. 创建一个公网的 Application Load Balancer
-resource "aws_lb" "flink_ui_alb" {
-  name               = "${var.project_name}-${var.environment}-flink-ui-alb"
-  internal           = false # false 表示这是公网 ALB
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id] # 引用上面创建的 ALB 安全组
-  subnets            = var.public_subnet_ids         # 必须放置在公共子网中
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-flink-ui-alb"
-  }
-}
-
-# 2. 为 ALB 创建一个目标组，指向 Flink JobManager
-resource "aws_lb_target_group" "flink_ui_tg" {
-  name        = "${var.project_name}-${var.environment}-flink-ui-tg"
-  port        = 8081 # Flink UI 的端口
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip" # 因为我们使用的是 Fargate，所以目标类型是 IP
-
-  health_check {
-    path                = "/" # Flink UI 的根路径可以作为健康检查点
-    protocol            = "HTTP"
-    matcher             = "200"
-    interval            = 30
-    timeout             = 10
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-}
-
-# 3. 为 ALB 创建一个监听器，将公网 HTTP 80 端口的流量转发到目标组
-resource "aws_lb_listener" "flink_ui_listener" {
-  load_balancer_arn = aws_lb.flink_ui_alb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.flink_ui_tg.arn
-  }
-}
+# # 1. 创建一个公网的 Application Load Balancer
+# resource "aws_lb" "flink_ui_alb" {
+#   name               = "${var.project_name}-${var.environment}-flink-ui-alb"
+#   internal           = false # false 表示这是公网 ALB
+#   load_balancer_type = "application"
+#   security_groups    = [aws_security_group.alb_sg.id] # 引用上面创建的 ALB 安全组
+#   subnets            = var.public_subnet_ids         # 必须放置在公共子网中
+# 
+#   tags = {
+#     Name = "${var.project_name}-${var.environment}-flink-ui-alb"
+#   }
+# }
+# 
+# # 2. 为 ALB 创建一个目标组，指向 Flink JobManager
+# resource "aws_lb_target_group" "flink_ui_tg" {
+#   name        = "${var.project_name}-${var.environment}-flink-ui-tg"
+#   port        = 8081 # Flink UI 的端口
+#   protocol    = "HTTP"
+#   vpc_id      = var.vpc_id
+#   target_type = "ip" # 因为我们使用的是 Fargate，所以目标类型是 IP
+# 
+#   health_check {
+#     path                = "/" # Flink UI 的根路径可以作为健康检查点
+#     protocol            = "HTTP"
+#     matcher             = "200"
+#     interval            = 30
+#     timeout             = 10
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#   }
+# }
+# 
+# # 3. 为 ALB 创建一个监听器，将公网 HTTP 80 端口的流量转发到目标组
+# resource "aws_lb_listener" "flink_ui_listener" {
+#   load_balancer_arn = aws_lb.flink_ui_alb.arn
+#   port              = "80"
+#   protocol          = "HTTP"
+# 
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.flink_ui_tg.arn
+#   }
+# }
 
 
 
