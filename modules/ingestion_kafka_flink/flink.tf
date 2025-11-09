@@ -179,7 +179,7 @@ resource "aws_security_group" "ecs_tasks_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Reason for commenting out: The ALB is disabled, so this ingress rule is no longer needed.
+  # Temporarily commenting out to break dependency before destroying the ALB security group.
   # ingress {
   #   description     = "Allow traffic from ALB to Flink UI"
   #   from_port       = 8081
