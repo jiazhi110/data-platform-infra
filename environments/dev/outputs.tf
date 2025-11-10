@@ -10,7 +10,7 @@ output "mock_data_task_family" {
 
 output "private_subnet_ids" {
   description = "List of private subnet IDs"
-  value       = module.networking.private_subnet_ids
+  value       = data.terraform_remote_state.network.outputs.private_subnet_ids
 }
 
 output "ecs_tasks_sg_id" {

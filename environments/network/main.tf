@@ -63,7 +63,7 @@ resource "aws_subnet" "public" {
   vpc_id     = aws_vpc.main.id
   cidr_block = var.public_subnets_cidr[count.index]
   # 将每个子网轮流放置在不同的可用区中，提高容灾能力。var.azs[count.index % var.az_count],但是这种写法并不主流。this approach is not really mainstream.
-  availability_zone = var.azs[count.index]
+  availability_zone = local.azs[count.index]
   # 自动为在这个子网中启动的实例分配公有 IP 地址。
   map_public_ip_on_launch = true
 
@@ -111,7 +111,7 @@ resource "aws_subnet" "private" {
 
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_subnets_cidr[count.index]
-  availability_zone = var.azs[count.index]
+  availability_zone = local.azs[count.index]
 
   tags = {
     Name        = "${var.project_name}-private-subnet-${count.index + 1}"

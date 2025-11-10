@@ -9,5 +9,5 @@ locals {
 
   glue_database_name = "${var.project_name}_${var.environment}_${var.glue_database_name_suffix}"
 
-  azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  # azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 }

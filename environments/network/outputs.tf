@@ -22,6 +22,6 @@ output "private_subnet_ids" {
 
 output "availability_zones" {
   description = "List of availability zones used"
-  value       = var.azs
+  value       = local.azs
 }
 
