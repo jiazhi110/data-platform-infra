@@ -23,15 +23,11 @@ environment = "dev"
 #        * 特点：地址空间最小。
 #        * 常用度：在企业级项目中较少作为 VPC 的主 CIDR，因为它太小了。这个地址段更常见于家庭路由器、小型办公室网络或 Docker 容器网络。
 
-# VPC CIDR for development
-vpc_cidr = "10.10.0.0/16"
-
-public_subnets_cidr = ["10.10.1.0/24", "10.10.2.0/24", "10.10.3.0/24"]
-
-private_subnets_cidr = ["10.10.11.0/24", "10.10.12.0/24", "10.10.13.0/24"]
-
-# AZ count for development
-az_count = 3
+# Refactor: Commenting out network-related variable assignments as they are now managed by the network layer.
+# vpc_cidr = "10.10.0.0/16"
+# public_subnets_cidr = ["10.10.1.0/24", "10.10.2.0/24", "10.10.3.0/24"]
+# private_subnets_cidr = ["10.10.11.0/24", "10.10.12.0/24", "10.10.13.0/24"]
+# az_count = 3
 
 # --- ingestion 模块变量赋值 ---
 kafka_broker_instance_type = "kafka.t3.small"

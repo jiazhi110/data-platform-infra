@@ -1,17 +1,30 @@
 # Development Environment - Data Platform Infrastructure
 
-# Module 1: Networking
-module "networking" {
-  source = "../../modules/networking"
+# Refactor: Commenting out the local networking module.
+# The network infrastructure is now managed in a separate state (environments/network).
+# module "networking" {
+#   source = "../../modules/networking"
+# 
+#   vpc_cidr             = var.vpc_cidr
+#   project_name         = var.project_name
+#   environment          = var.environment
+#   aws_region           = var.aws_region
+#   azs                  = local.azs
+#   az_count             = var.az_count
+#   private_subnets_cidr = var.private_subnets_cidr
+#   public_subnets_cidr  = var.public_subnets_cidr
+# }
 
-  vpc_cidr             = var.vpc_cidr
-  project_name         = var.project_name
-  environment          = var.environment
-  aws_region           = var.aws_region
-  azs                  = local.azs
-  az_count             = var.az_count
-  private_subnets_cidr = var.private_subnets_cidr
-  public_subnets_cidr  = var.public_subnets_cidr
+# Refactor: Adding a data source to read outputs from the new network layer state.
+data "terraform_remote_state" "network" {
+  backend = "s3"
+  config = {
+    bucket       = "justin-data-platform-tfstate-bucket-dev"
+    key          = "network/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
+  }
 }
 
 # Module 2: Ingestion Kafka Flink ---
@@ -25,9 +38,12 @@ module "ingestion" {
 
   # --- 关键：连接两个模块 ---
   # 将 networking 模块的输出，作为 ingestion 模块的输入。
-  vpc_id             = module.networking.vpc_id
-  public_subnet_ids  = module.networking.public_subnet_ids
-  private_subnet_ids = module.networking.private_subnet_ids
+  # Refactor: Changing the source of network variables from the local module to the remote state.
+  # Original: vpc_id             = module.networking.vpc_id
+  # Original: private_subnet_ids = module.networking.private_subnet_ids
+  vpc_id             = data.terraform_remote_state.network.outputs.vpc_id
+  public_subnet_ids  = data.terraform_remote_state.network.outputs.public_subnet_ids
+  private_subnet_ids = data.terraform_remote_state.network.outputs.private_subnet_ids
 
   # --- 传入 ingestion 模块专属的变量 ---
   kafka_broker_instance_type = var.kafka_broker_instance_type
