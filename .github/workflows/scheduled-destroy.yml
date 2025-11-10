@@ -35,6 +35,6 @@ jobs:
 
       - name: Terraform Destroy
         working-directory: ./environments/dev
-        run: terraform destroy -auto-approve"
+        run: terraform destroy -auto-approve
         # remove target as dependency lock
         # run: terraform destroy -auto-approve -target="module.ingestion"
