@@ -100,8 +100,11 @@ jobs:
 #           TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
         run: |
           # 在 Dev 环境，直接 Plan 并自动 Apply,无需再写 -var 参数
-          terraform plan -target="module.ingestion"
-          terraform apply -auto-approve -target="module.ingestion"
+          terraform plan
+          terraform apply -auto-approve
+          # remove target as dependency lock
+          # terraform plan -target="module.ingestion"
+          # terraform apply -auto-approve -target="module.ingestion"
 
   #====================================================
   #==         生产环境部署第一步：规划 (Plan)        ==
