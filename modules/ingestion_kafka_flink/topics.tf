@@ -44,6 +44,44 @@ resource "kafka_topic" "produce_events" {
   }
 }
 
+# --- ACL for Mock Data Generator ---
+# Grant Write permission to the mock-data-generator task role, allowing it to produce messages
+# to the 'ingestion.user.behavior.v1' topic.
+resource "kafka_acl" "mock_data_producer_acl" {
+  acl_principal                = "User:${aws_iam_role.mock_data_task_role.arn}"
+  acl_host                     = "*"
+  acl_operation                = "Write"
+  acl_permission_type          = "Allow"
+  resource_type                = "Topic"
+  resource_name                = kafka_topic.produce_events.name
+  resource_pattern_type_filter = "Literal"
+}
+
+# --- ACLs for Flink Consumer ---
+# Grant Read permission on the topic to the Flink task role.
+resource "kafka_acl" "flink_consumer_acl" {
+  acl_principal                = "User:${aws_iam_role.ecs_task_role.arn}"
+  acl_host                     = "*"
+  acl_operation                = "Read"
+  acl_permission_type          = "Allow"
+  resource_type                = "Topic"
+  resource_name                = kafka_topic.produce_events.name
+  resource_pattern_type_filter = "Literal"
+}
+
+# Grant Read permission on Consumer Groups to the Flink task role.
+# This is necessary for Flink to manage its consumer offset.
+resource "kafka_acl" "flink_consumer_group_acl" {
+  acl_principal                = "User:${aws_iam_role.ecs_task_role.arn}"
+  acl_host                     = "*"
+  acl_operation                = "Read"
+  acl_permission_type          = "Allow"
+  resource_type                = "Group"
+  resource_name                = "*" # Flink will create a consumer group, so we allow access to any group.
+  resource_pattern_type_filter = "Literal"
+}
+
+
 # resource "kafka_topic" "another_topic" {
 #   name               = "another.topic.for.something.else"
 #   partitions         = 6
