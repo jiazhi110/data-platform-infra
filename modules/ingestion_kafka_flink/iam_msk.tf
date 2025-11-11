@@ -202,3 +202,47 @@ resource "aws_ssm_parameter" "msk_bootstrap_brokers_private" {
   value = aws_msk_cluster.kafka_cluster.bootstrap_brokers_sasl_iam
   overwrite = true
 }
+
+# --- MSK Cluster Policy ---
+# This policy grants specific IAM roles the necessary permissions to connect to the MSK cluster
+# and perform Kafka actions. Without this, all IAM-based connection attempts will be denied.
+
+resource "aws_msk_cluster_policy" "main" {
+  cluster_arn = aws_msk_cluster.kafka_cluster.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = [
+            # 1. Grant access to the Flink task role
+            aws_iam_role.ecs_task_role.arn,
+
+            # 2. Grant access to the Mock Data Generator task role
+            aws_iam_role.mock_data_task_role.arn,
+
+            # 3. Grant access to the role running Terraform (e.g., the GitHub Actions runner)
+            # This is needed for the kafka_topic and kafka_acl resources.
+            data.aws_caller_identity.me.arn
+          ]
+        },
+        Action = [
+          "kafka-cluster:Connect",
+          "kafka-cluster:DescribeCluster",
+          "kafka-cluster:AlterCluster",
+          "kafka-cluster:DescribeTopic",
+          "kafka-cluster:CreateTopic",
+          "kafka-cluster:DeleteTopic",
+          "kafka-cluster:ReadData",
+          "kafka-cluster:WriteData",
+          "kafka-cluster:DescribeGroup",
+          "kafka-cluster:AlterGroup",
+          "kafka-cluster:DeleteGroup"
+        ],
+        Resource = aws_msk_cluster.kafka_cluster.arn
+      }
+    ]
+  })
+}
