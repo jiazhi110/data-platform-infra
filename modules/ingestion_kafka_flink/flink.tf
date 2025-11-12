@@ -135,10 +135,19 @@ resource "aws_ecs_service" "producer_service" {
 resource "null_resource" "stop_producer_service" {
   depends_on = [aws_ecs_service.producer_service]
 
+  # Use triggers to pass data to the provisioner, avoiding direct references
+  # in the destroy-time provisioner command.
+  triggers = {
+    cluster_name = aws_ecs_service.producer_service.cluster
+    service_name = aws_ecs_service.producer_service.name
+    aws_region   = var.aws_region
+  }
+
   # This provisioner runs when the resource is destroyed.
   provisioner "local-exec" {
-    when    = destroy
-    command = "aws ecs update-service --cluster ${aws_ecs_service.producer_service.cluster} --service ${aws_ecs_service.producer_service.name} --desired-count 0 --region ${var.aws_region}"
+    when = destroy
+    # Reference the triggers via 'self' to comply with destroy-time provisioner rules.
+    command = "aws ecs update-service --cluster ${self.triggers.cluster_name} --service ${self.triggers.service_name} --desired-count 0 --region ${self.triggers.aws_region}"
   }
 }
 
