@@ -131,6 +131,17 @@ resource "aws_ecs_service" "producer_service" {
   # }
 }
 
+# 在销毁时，先将 ECS 服务的期望任务数降为 0
+resource "null_resource" "stop_producer_service" {
+  depends_on = [aws_ecs_service.producer_service]
+
+  # This provisioner runs when the resource is destroyed.
+  provisioner "local-exec" {
+    when    = destroy
+    command = "aws ecs update-service --cluster ${aws_ecs_service.producer_service.cluster} --service ${aws_ecs_service.producer_service.name} --desired-count 0 --region ${var.aws_region}"
+  }
+}
+
 # CloudWatch 日志组 - 更新名称以适配 Flink
 resource "aws_cloudwatch_log_group" "flink_logs" {
   name              = "/ecs/${var.flink_task_family}"
