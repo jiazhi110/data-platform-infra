@@ -259,9 +259,9 @@ resource "kafka_acl" "mock_data_producer_acl" {
   resource_name                = kafka_topic.produce_events.name
   resource_pattern_type_filter = "Literal"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
 
 # --- ACLs for Flink Consumer ---
