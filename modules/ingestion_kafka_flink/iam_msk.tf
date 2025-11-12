@@ -228,19 +228,7 @@ resource "aws_msk_cluster_policy" "main" {
             data.aws_caller_identity.me.arn
           ]
         },
-        Action = [
-          "kafka-cluster:Connect",
-          "kafka-cluster:DescribeCluster",
-          "kafka-cluster:AlterCluster",
-          "kafka-cluster:DescribeTopic",
-          "kafka-cluster:CreateTopic",
-          "kafka-cluster:DeleteTopic",
-          "kafka-cluster:ReadData",
-          "kafka-cluster:WriteData",
-          "kafka-cluster:DescribeGroup",
-          "kafka-cluster:AlterGroup",
-          "kafka-cluster:DeleteGroup"
-        ],
+        Action   = "kafka-cluster:*", # 暂时允许所有操作，用于调试
         Resource = aws_msk_cluster.kafka_cluster.arn
       }
     ]
