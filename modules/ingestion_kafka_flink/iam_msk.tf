@@ -251,7 +251,7 @@ resource "aws_msk_cluster_policy" "main" {
 # Grant Write permission to the mock-data-generator task role, allowing it to produce messages
 # to the 'ingestion.user.behavior.v1' topic.
 resource "kafka_acl" "mock_data_producer_acl" {
-  acl_principal                = "User:${aws_iam_role.mock_data_task_role.arn}"
+  acl_principal                = "User:*" # 暂时允许任何已认证的用户写入，用于调试
   acl_host                     = "*"
   acl_operation                = "Write"
   acl_permission_type          = "Allow"
