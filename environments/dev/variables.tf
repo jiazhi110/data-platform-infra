@@ -176,3 +176,8 @@ variable "runner_security_group_name" {
   description = "The name of the security group for the self-hosted runner."
   type        = string
 }
+
+variable "runner_iam_role_name" {
+  description = "The name of the IAM role for the EC2 runner instance."
+  type        = string
+}

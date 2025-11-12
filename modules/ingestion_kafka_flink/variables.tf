@@ -147,3 +147,8 @@ variable "mock_data_schedule" {
   type        = string
   default     = null
 }
+
+variable "runner_iam_role_name" {
+  description = "The name of the IAM role attached to the EC2 runner instance for manual Kafka consumption."
+  type        = string
+}
