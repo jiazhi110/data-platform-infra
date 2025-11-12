@@ -33,6 +33,17 @@ jobs:
         working-directory: ./environments/dev
         run: terraform init -reconfigure
 
+      - name: Remove Kafka Resources from State
+        working-directory: ./environments/dev
+        run: |
+          terraform state rm 'module.ingestion.kafka_acl.ec2_runner_consumer_acl' || true
+          terraform state rm 'module.ingestion.kafka_acl.ec2_runner_consumer_group_acl' || true
+          terraform state rm 'module.ingestion.kafka_acl.flink_consumer_acl' || true
+          terraform state rm 'module.ingestion.kafka_acl.flink_consumer_group_acl' || true
+          terraform state rm 'module.ingestion.kafka_acl.mock_data_producer_acl' || true
+          terraform state rm 'module.ingestion.kafka_acl.terraform_topic_creator_acl' || true
+          terraform state rm 'module.ingestion.kafka_topic.produce_events' || true
+
       - name: Terraform Destroy
         working-directory: ./environments/dev
         run: terraform destroy -auto-approve

@@ -247,9 +247,9 @@ resource "kafka_acl" "mock_data_producer_acl" {
   resource_name                = kafka_topic.produce_events.name
   resource_pattern_type_filter = "Literal"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
 
 # --- ACLs for Flink Consumer ---
@@ -263,9 +263,9 @@ resource "kafka_acl" "flink_consumer_acl" {
   resource_name                = kafka_topic.produce_events.name
   resource_pattern_type_filter = "Literal"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
 
 # Grant Read permission on Consumer Groups to the Flink task role.
@@ -279,9 +279,9 @@ resource "kafka_acl" "flink_consumer_group_acl" {
   resource_name                = "*" # Flink will create a consumer group, so we allow access to any group.
   resource_pattern_type_filter = "Literal"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
 
 # --- ACLs for EC2 Runner (for manual consumption) ---
@@ -301,9 +301,9 @@ resource "kafka_acl" "ec2_runner_consumer_acl" {
   resource_name                = kafka_topic.produce_events.name
   resource_pattern_type_filter = "Literal"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
 
 # Grant Read permission on Consumer Groups to the EC2 runner role.
@@ -316,7 +316,7 @@ resource "kafka_acl" "ec2_runner_consumer_group_acl" {
   resource_name                = "*" # 允许它加入任何消费者组
   resource_pattern_type_filter = "Literal"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
