@@ -15,15 +15,31 @@ resource "aws_msk_cluster" "kafka_cluster" {
         volume_size = 10 # 单位 GB
       }
     }
+
+    # [注释] MSK 客户端认证的关键配置
+    # -----------------------------------------------------------------
+    # 对于在 VPC 内部运行的客户端（例如 ECS 任务、Lambda），必须在此处的 `vpc_connectivity` 块中定义认证方法。
+    # 顶层的 `client_authentication` 块仅适用于公网访问的客户端或作为遗留配置，对于纯内网访问的集群不起作用。
+    # 将 IAM 认证配置在这里，可以确保 VPC 内部的客户端能够成功通过 IAM 角色进行认证。
+    connectivity_info {
+      vpc_connectivity {
+        client_authentication {
+          sasl {
+            iam = true
+          }
+        }
+      }
+    }
   }
 
   # --- 认证与加密配置 (IAM) ---
   # 启用客户端认证，并指定使用 SASL/IAM。
-  client_authentication {
-    sasl {
-      iam = true
-    }
-  }
+  # aws kafka describe-cluster, the ClientAuthentication blow is invalid !!!!!!!
+  # client_authentication {
+  #   sasl {
+  #     iam = true
+  #   }
+  # }
 
   # # ⚠️ 仅用于开发/测试环境：启用 MSK 公网访问
   # # 在生产环境中，请勿启用此配置，应使用私有网络连接
