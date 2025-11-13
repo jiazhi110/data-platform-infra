@@ -25,19 +25,36 @@ resource "aws_iam_role" "mock_data_task_role" {
 }
 
 data "aws_iam_policy_document" "mock_data_task_policy" {
+  # Statement 1: 授予集群级别的权限
   statement {
+    effect = "Allow"
     actions = [
-      "kafka:DescribeCluster",
-      "kafka:GetBootstrapBrokers",
-      "kafka:DescribeTopic",
-      "kafka:ListTopics",
-      "kafka:WriteData"
+      "kafka-cluster:Connect",                 # 允许连接
+      "kafka-cluster:DescribeCluster",         # 允许描述集群
+      "kafka-cluster:WriteDataIdempotently"    # 允许幂等性写入 (防止消息重复)
     ]
     resources = [
       aws_msk_cluster.kafka_cluster.arn
     ]
   }
 
+  # Statement 2: 授予 Topic 和 Transactional ID 级别的权限
+  statement {
+    effect = "Allow"
+    actions = [
+      "kafka-cluster:*Topic*",                 # 允许创建、描述、修改 Topic
+      "kafka-cluster:WriteData",               # 允许向 Topic 写入数据
+      "kafka-cluster:ReadData"                 # 某些客户端库在生产消息时也需要读取元数据
+    ]
+    resources = [
+      # 授权操作所有 Topic
+      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:topic/${var.msk_cluster_name}/*",
+      # 授权操作所有 Transactional ID 事物
+      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:transactional-id/${var.msk_cluster_name}/*"
+    ]
+  }
+
+  # Statement 3: 保留你原来的 SSM 参数权限
   statement {
     actions = [
       "ssm:PutParameter",

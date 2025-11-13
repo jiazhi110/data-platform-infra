@@ -21,25 +21,25 @@ resource "aws_msk_cluster" "kafka_cluster" {
     # 对于在 VPC 内部运行的客户端（例如 ECS 任务、Lambda），必须在此处的 `vpc_connectivity` 块中定义认证方法。
     # 顶层的 `client_authentication` 块仅适用于公网访问的客户端或作为遗留配置，对于纯内网访问的集群不起作用。
     # 将 IAM 认证配置在这里，可以确保 VPC 内部的客户端能够成功通过 IAM 角色进行认证。
-    connectivity_info {
-      vpc_connectivity {
-        client_authentication {
-          sasl {
-            iam = true
-          }
-        }
-      }
-    }
+    # connectivity_info {
+    #   vpc_connectivity {
+    #     client_authentication {
+    #       sasl {
+    #         iam = true
+    #       }
+    #     }
+    #   }
+    # }
   }
 
   # --- 认证与加密配置 (IAM) ---
   # 启用客户端认证，并指定使用 SASL/IAM。
   # aws kafka describe-cluster, the ClientAuthentication blow is invalid !!!!!!!
-  # client_authentication {
-  #   sasl {
-  #     iam = true
-  #   }
-  # }
+  client_authentication {
+    sasl {
+      iam = true
+    }
+  }
 
   # # ⚠️ 仅用于开发/测试环境：启用 MSK 公网访问
   # # 在生产环境中，请勿启用此配置，应使用私有网络连接
@@ -255,7 +255,7 @@ resource "aws_msk_cluster_policy" "main" {
 # Grant Write permission to the mock-data-generator task role, allowing it to produce messages
 # to the 'ingestion.user.behavior.v1' topic.
 resource "kafka_acl" "mock_data_producer_acl" {
-  acl_principal                = "User:*" # 暂时允许任何已认证的用户写入，用于调试
+  acl_principal                = "User:${aws_iam_role.mock_data_task_role.arn}" # 精确授予 mock data generator 任务角色写入权限
   acl_host                     = "*"
   acl_operation                = "Write"
   acl_permission_type          = "Allow"
