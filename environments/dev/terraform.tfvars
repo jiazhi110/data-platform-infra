@@ -80,7 +80,7 @@ flink_task_memory = "3072"
 
 msk_logs_bucket_prefix = "msk/dev"
 
-flink_output_bucket = "ingestion-flink-output-s3"
+flink_output_bucket = "justin-data-platform-dev-flink-output-v1"
 
 # 示例：设置为每天凌晨 1 点 (UTC 时间) 运行
 # mock_data_schedule = null

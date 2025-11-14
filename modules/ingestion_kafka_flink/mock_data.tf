@@ -42,7 +42,7 @@ data "aws_iam_policy_document" "mock_data_task_policy" {
   statement {
     effect = "Allow"
     actions = [
-      "kafka-cluster:*Topic*",                 # 允许创建、描述、修改 Topic
+      "kafka-cluster:*Topic*",                 # 允许创建、描述、修改 Topic  https://docs.aws.amazon.com/zh_cn/IAM/latest/UserGuide/reference_policies_elements_action.html
       "kafka-cluster:WriteData",               # 允许向 Topic 写入数据
       "kafka-cluster:ReadData"                 # 某些客户端库在生产消息时也需要读取元数据
     ]

@@ -276,38 +276,37 @@ data "aws_iam_policy_document" "ecs_task_assume_role" {
 
 # 最小权限策略                            权限策略（Permission Policy）
 data "aws_iam_policy_document" "ecs_task_policy" {
-  # statement {
-  #   sid    = "ReadKafkaSecret"
-  #   effect = "Allow"
-  #   actions = [
-  #     "secretsmanager:GetSecretValue"
-  #   ]
-  #   resources = [aws_secretsmanager_secret.msk_scram_credentials.arn]
-  # }
-
+  # 该声明授予 Flink 任务访问 Kafka 集群的权限
   statement {
     sid    = "KafkaClusterAccess"
     effect = "Allow"
     actions = [
-      "kafka:DescribeCluster",
-      "kafka:GetBootstrapBrokers",
-      "kafka-cluster:Connect",
-      "kafka-cluster:DescribeTopic",
-      "kafka-cluster:ReadData",
-      "kafka-cluster:WriteData",
-      "kafka-cluster:DescribeGroup"
+      "kafka-cluster:DescribeCluster",    # 允许 Flink 客户端发现集群信息
+      "kafka-cluster:Connect",            # 允许 Flink 客户端连接到 Kafka Broker
+      "kafka-cluster:DescribeTopic",      # 允许 Flink 客户端获取 Topic 的元数据（如分区信息）
+      "kafka-cluster:ReadData",           # 允许 Flink 从 Topic 消费数据
+      "kafka-cluster:DescribeGroup",      # 允许 Flink 描述消费者组，用于协调和 offset 管理
+      "kafka-cluster:AlterGroup"          # [新增] 允许 Flink 消费者提交 offset，对于消费者正常工作至关重要
+      # "kafka-cluster:WriteData"         # [移除] Flink 任务作为消费者，不需要写入数据到 Kafka，遵循最小权限原则
     ]
-    # resources = ["*"] # 建议限定到你创建的 MSK Cluster ARN
-    resources = [aws_msk_cluster.kafka_cluster.arn]
+    # 最佳实践是明确指定所有相关资源的 ARN
+    resources = [
+      aws_msk_cluster.kafka_cluster.arn,                                                                                             # 集群 ARN
+      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:topic/${aws_msk_cluster.kafka_cluster.cluster_name}/*", # [修改] 明确授权访问集群下的所有 Topic
+      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:group/${aws_msk_cluster.kafka_cluster.cluster_name}/*"  # [修改] 明确授权访问集群下的所有消费者组
+    ]
   }
 
+  # 该声明授予 Flink 任务写入 S3 的权限
   statement {
     sid    = "S3Access"
     effect = "Allow"
     actions = [
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:ListBucket"
+      "s3:PutObject",                 # 允许 Flink 将数据对象写入 S3
+      "s3:ListBucket",                # 允许 Flink 列出桶内对象，S3 Sink 的某些操作需要
+      "s3:ListMultipartUploadParts",  # [新增] 支持 Flink S3 Sink 的多部分上传功能，对于大文件和 Exactly-Once 语义很重要
+      "s3:AbortMultipartUpload"       # [新增] 允许在上传失败时中止多部分上传，避免产生不完整的文件和额外费用
+      # "s3:GetObject"                # [移除] Flink 任务作为写入者，不需要从 S3 读取数据，遵循最小权限原则
     ]
     resources = [
       "arn:aws:s3:::${var.flink_output_bucket}",
@@ -315,18 +314,114 @@ data "aws_iam_policy_document" "ecs_task_policy" {
     ]
   }
 
+  # 该声明授予 ECS Exec 和 SSM Parameter Store 的访问权限
   statement {
     sid    = "SSMAccess"
     effect = "Allow"
     actions = [
+      # 以下四个权限用于支持 ECS Exec 功能，方便调试
       "ssmmessages:CreateControlChannel",
       "ssmmessages:CreateDataChannel",
       "ssmmessages:OpenControlChannel",
-      "ssmmessages:OpenDataChannel"
+      "ssmmessages:OpenDataChannel",
+      "ssm:GetParameter" # [新增] 允许 Flink 任务从 SSM Parameter Store 读取配置（例如，镜像 URL 或其他运行时参数）
     ]
+    # 理想情况下，应将 ssm:GetParameter 的资源限定到具体的参数 ARN
+    # 例如: "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.me.account_id}:parameter/data-platform/dev/*"
     resources = ["*"]
   }
 }
+
+# --- S3 Bucket for Flink Output ---
+# Flink 任务的输出 S3 桶，用于存储处理后的数据。
+resource "aws_s3_bucket" "flink_output_bucket" {
+  bucket = var.flink_output_bucket # 使用变量定义的桶名称
+  acl    = "private"               # 默认设置为私有
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-flink-output"
+    Environment = var.environment
+  }
+}
+
+# 阻止所有公共访问，确保 S3 桶的安全性
+resource "aws_s3_bucket_public_access_block" "flink_output_bucket_public_access_block" {
+  bucket = aws_s3_bucket.flink_output_bucket.id
+
+  block_public_acls       = true  # 阻止新的公共 ACL (访问控制列表) 应用于此桶或其对象。
+  block_public_policy     = true  # 阻止附加任何授予公共访问权限的存储桶策略。
+  ignore_public_acls      = true  # 忽略所有现有的公共 ACL，使它们失效。
+  restrict_public_buckets = true  # 限制对具有公共策略的存储桶的访问，仅允许 AWS 服务和授权账户用户访问。
+}
+
+# 启用版本控制，防止意外删除或覆盖数据
+resource "aws_s3_bucket_versioning" "flink_output_bucket_versioning" {
+  bucket = aws_s3_bucket.flink_output_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# 启用默认服务器端加密，保护静态数据
+resource "aws_s3_bucket_server_side_encryption_configuration" "flink_output_bucket_encryption" {
+  bucket = aws_s3_bucket.flink_output_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256" # 使用 AES256 进行默认加密
+    }
+  }
+}
+
+# --- SSM Parameters for Application Configuration ---
+# 将关键配置存入 SSM Parameter Store，以便 Flink 应用在运行时动态读取，实现基础设施与应用的解耦。
+
+# 存储 Kafka Bootstrap Brokers 地址 (SASL/IAM)
+resource "aws_ssm_parameter" "kafka_bootstrap_brokers" {
+  name  = "/${var.project_name}/${var.environment}/kafka/bootstrap_brokers_sasl_iam"
+  type  = "String"
+  value = aws_msk_cluster.kafka_cluster.bootstrap_brokers_sasl_iam
+  
+  tags = {
+    Name = "${var.project_name}-${var.environment}-kafka-bootstrap-brokers"
+  }
+}
+
+# 存储 Kafka Topic 名称
+resource "aws_ssm_parameter" "kafka_topic_name" {
+  name  = "/${var.project_name}/${var.environment}/kafka/topic_name"
+  type  = "String"
+  value = kafka_topic.produce_events.name
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-kafka-topic-name"
+  }
+}
+
+# 存储 Flink 输出的 S3 桶名称
+resource "aws_ssm_parameter" "flink_output_s3_bucket" {
+  name  = "/${var.project_name}/${var.environment}/s3/flink_output_bucket"
+  type  = "String"
+  value = aws_s3_bucket.flink_output_bucket.bucket
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-flink-output-s3-bucket"
+  }
+}
+
+# 存储 Kafka 消费者组 ID
+resource "aws_ssm_parameter" "kafka_consumer_group_id" {
+  name  = "/${var.project_name}/${var.environment}/kafka/consumer_group_id"
+  type  = "String"
+  # 核心：把我们决定的名字作为值存进去
+  value = "${var.project_name}-${var.environment}-flink-consumer-group"
+  
+  tags = {
+    Name = "${var.project_name}-${var.environment}-kafka-consumer-group-id"
+  }
+}
+
+
 
 # ------------------------------------------------------------------------------
 # Application Load Balancer for Flink UI
