@@ -32,53 +32,58 @@ resource "aws_ecs_task_definition" "producer_task" {
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = aws_iam_role.ecs_task_role.arn
 
-  # 容器定义
+  # =================================================================================
+  # 容器定义 - 已从“会话模式”重构为“应用模式”
+  # =================================================================================
+
+  # ---------------------------------------------------------------------------------
+  # 原“会话模式”定义 (已注释掉)
+  # 原因: “会话模式”将 Flink 集群的生命周期与作业的生命周期分离，不符合将
+  #       基础设施与应用视为一体的纯 IaC 理念。它需要一个额外的步骤来提交作业，
+  #       不适合持续运行的 consumer 场景。
+  # ---------------------------------------------------------------------------------
+  /*
   container_definitions = jsonencode([
     # --- Job Manager 容器 ---
     {
       name  = "jobmanager",
       image = var.flink_image_url,
-      # image     = data.aws_ecr_image.flink_image.image_uri,  # 这里用动态URI，这里用client payload 的 output parameter.
-      essential = true, # 如果这个容器失败，整个 Task 会失败  essential：必要的
-      #Flink 官方镜像里 JobManager/TaskManager 脚本 /opt/flink/bin/jobmanager.sh 或 taskmanager.sh 默认需要一个参数 start-foreground 才会以前台方式启动  start-foreground :启动前台
+      essential = true,
       command = ["start-foreground"],
       entryPoint = [
         "/opt/flink/bin/jobmanager.sh"
       ],
       environment = [
         { name = "FLINK_PROPERTIES_jobmanager.rpc.address", value = "jobmanager" }
-        # 在这里可以添加更多 Flink 配置作为环境变量
       ],
       portMappings = [
-        { containerPort = 8081, hostPort = 8081, protocol = "tcp" }, # Web UI
-        { containerPort = 6123, hostPort = 6123, protocol = "tcp" }  # RPC Port
+        { containerPort = 8081, hostPort = 8081, protocol = "tcp" },
+        { containerPort = 6123, hostPort = 6123, protocol = "tcp" }
       ],
       linuxParameters = {
-        initProcessEnabled = true # 用于配置容器的 Linux 特性，确保一些特定的进程管理功能（如 init 进程）正常工作。
+        initProcessEnabled = true
       },
       executeCommandConfiguration = {
-        enabled = true # 启用在容器内执行命令的功能，允许你通过 aws ecs execute-command 在容器中执行交互式命令进行调试和管理。
+        enabled = true
       },
       logConfiguration = {
         logDriver = "awslogs",
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.flink_logs.name,
           "awslogs-region"        = var.aws_region,
-          "awslogs-stream-prefix" = "jobmanager" # 使用容器名作为流前缀，方便区分日志
+          "awslogs-stream-prefix" = "jobmanager"
         }
       }
     },
     # --- Task Manager 容器 ---
     {
       name = "taskmanager",
-      # image     = var.flink_image_uri,
-      image     = var.flink_image_url, # 这里用ingestion_kafka_flink 的 flink_image_uri.
-      essential = true,                # 在 dev 环境，建议也设为 true，确保集群的完整性
+      image     = var.flink_image_url,
+      essential = true,
       command   = ["start-foreground"],
       entryPoint = [
         "/opt/flink/bin/taskmanager.sh"
       ],
-      # 容器间可以通过 localhost 通信，但为了清晰，我们明确指向 jobmanager
       dependsOn = [
         { containerName = "jobmanager", condition = "START" }
       ],
@@ -99,6 +104,50 @@ resource "aws_ecs_task_definition" "producer_task" {
       }
     }
   ])
+  */
+
+  # ---------------------------------------------------------------------------------
+  # 新“应用模式”定义
+  # 解释:
+  # 1. 单一容器: “应用模式”将 Flink 集群和应用捆绑为一个单元。不再需要区分
+  #              JobManager 和 TaskManager，整个应用在一个容器内启动和协调。
+  # 2. 依赖 Dockerfile 的 ENTRYPOINT: 我们移除了 Terraform 中的 'entryPoint' 和
+  #                                  'command'。这使得 ECS 会执行 Docker 镜像中
+  #                                  定义的 ENTRYPOINT，从而以“应用模式”启动 Flink 作业。
+  # 3. 端口映射: 仍然保留 8081 端口，以便可以访问 Flink 作业的 Web UI 进行监控。
+  # ---------------------------------------------------------------------------------
+  container_definitions = jsonencode([
+    {
+      name      = "flink-application", # 单一容器，名称可以自定义
+      image     = var.flink_image_url,
+      essential = true,
+
+      # 注意: 'entryPoint' 和 'command' 已被移除，以使用 Dockerfile 中的定义。
+      # 你的 Dockerfile 应该包含类似这样的命令:
+      # ENTRYPOINT ["/opt/flink/bin/flink-entrypoint.sh", "run-application", ...]
+
+      # 端口映射，用于访问 Flink Web UI
+      portMappings = [
+        { containerPort = 8081, hostPort = 8081, protocol = "tcp" }
+      ],
+
+      # 其他配置保持不变
+      linuxParameters = {
+        initProcessEnabled = true
+      },
+      executeCommandConfiguration = {
+        enabled = true
+      },
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.flink_logs.name,
+          "awslogs-region"        = var.aws_region,
+          "awslogs-stream-prefix" = "flink-application" # 使用统一的日志前缀
+        }
+      }
+    }
+  ])
 }
 
 # ECS 服务 (Service): 运行并维护“蓝图”的实例
@@ -115,7 +164,7 @@ resource "aws_ecs_service" "producer_service" {
     # Reason for change: Directly exposing Flink UI via public IP for development/debugging.
     # Original: subnets          = var.private_subnet_ids
     # Original: assign_public_ip = false
-    subnets          = var.public_subnet_ids # 改为使用公共子网
+    subnets          = var.public_subnet_ids # 改为使用公共子网为了访问 flink 8081
     security_groups  = [aws_security_group.ecs_tasks_sg.id]
     assign_public_ip = true # 启用公网 IP 分配
   }
@@ -123,10 +172,10 @@ resource "aws_ecs_service" "producer_service" {
   # 确保在任务定义更新后，服务能自动部署新版本
   force_new_deployment = true
 
-  # Reason for commenting out: The ALB is disabled, so the service cannot be attached to it.
-  # load_balancer {
+  #   # 原因: ALB 已被禁用。
+  #   # 更新: container_name 已从 "jobmanager" 修改为 "flink-application"，以匹配新的“应用模式”单容器定义。
   #   target_group_arn = aws_lb_target_group.flink_ui_tg.arn
-  #   container_name   = "jobmanager" # 必须与容器定义中的 Flink JobManager 容器名称完全匹配
+  #   container_name   = "flink-application" # 必须与容器定义中的 Flink 应用容器名称完全匹配
   #   container_port   = 8081
   # }
 }
