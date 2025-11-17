@@ -356,7 +356,7 @@ data "aws_iam_policy_document" "ecs_task_policy" {
       "s3:ListMultipartUploadParts",  # [新增] 支持 Flink S3 Sink 的多部分上传功能，对于大文件和 Exactly-Once 语义很重要
       "s3:AbortMultipartUpload",      # [新增] 允许在上传失败时中止多部分上传，避免产生不完整的文件和额外费用
       "s3:DeleteObject"               # [新增] 允许 Flink 删除 S3 对象，用于 Checkpoint 清理等操作
-      # "s3:GetObject"                # [移除] Flink 任务作为写入者，不需要从 S3 读取数据，遵循最小权限原则
+      "s3:GetObject"                  # [重新加入] 允许 Flink 在故障恢复时从 Checkpoint 读取状态
     ]
     resources = [
       "arn:aws:s3:::${var.flink_output_bucket}",
