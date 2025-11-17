@@ -196,7 +196,8 @@ resource "null_resource" "stop_producer_service" {
   provisioner "local-exec" {
     when = destroy
     # Reference the triggers via 'self' to comply with destroy-time provisioner rules.
-    command = "aws ecs update-service --cluster ${self.triggers.cluster_name} --service ${self.triggers.service_name} --desired-count 0 --region ${self.triggers.aws_region}"
+    command    = "aws ecs update-service --cluster ${self.triggers.cluster_name} --service ${self.triggers.service_name} --desired-count 0 --region ${self.triggers.aws_region}"
+    on_failure = "continue" # 如果服务已经不存在或不活跃，忽略错误并继续销毁过程
   }
 }
 
@@ -385,13 +386,19 @@ data "aws_iam_policy_document" "ecs_task_policy" {
 # --- S3 Bucket for Flink Output ---
 # Flink 任务的输出 S3 桶，用于存储处理后的数据。
 resource "aws_s3_bucket" "flink_output_bucket" {
-  bucket = var.flink_output_bucket # 使用变量定义的桶名称
-  acl    = "private"               # 默认设置为私有
+  bucket        = var.flink_output_bucket # 使用变量定义的桶名称
+  force_destroy = true                    # 强制删除，即使桶不为空
 
   tags = {
     Name        = "${var.project_name}-${var.environment}-flink-output"
     Environment = var.environment
   }
+}
+
+# 为 S3 桶设置 ACL (修复弃用警告)
+resource "aws_s3_bucket_acl" "flink_output_bucket_acl" {
+  bucket = aws_s3_bucket.flink_output_bucket.id
+  acl    = "private"
 }
 
 # 阻止所有公共访问，确保 S3 桶的安全性
