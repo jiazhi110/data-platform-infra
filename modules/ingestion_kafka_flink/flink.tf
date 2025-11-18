@@ -132,23 +132,17 @@ resource "aws_ecs_task_definition" "producer_task" {
       ],
 
       # ---------------------------------------------------------------------------------
-      # 🔥 关键修正: 通过环境变量集中配置 Flink 核心参数
+      # 🔥 关键修正: 通过单一环境变量集中配置 Flink 核心参数
       # ---------------------------------------------------------------------------------
       environment = [
-        # 原因: 解决 "NoResourceAvailableException" 错误。
-        # 解释: 在 Application Mode 下，容器需要明确知道自己能提供多少个处理槽 (Slot)
-        #       来运行任务。我们在这里设置为2，可以根据需要调整。这个值应该与
-        #       作业的并行度相匹配或更高。
+        # 原因: 解决 "NoResourceAvailableException" 并提高稳定性。
+        # 解释: 根据 Flink 官方文档，多个动态配置应通过一个名为 FLINK_PROPERTIES
+        #       的环境变量传递，并用换行符 (\n) 分隔。此方法可确保所有配置都生效。
+        #       - taskmanager.numberOfTaskSlots: 解决资源不足的问题。
+        #       - state.backend: 切换到生产级的 RocksDB 状态后端，避免内存溢出。
         {
           name  = "FLINK_PROPERTIES",
-          value = "taskmanager.numberOfTaskSlots: 2"
-        },
-        # 原因: 提高生产环境下的稳定性和可扩展性，避免因内存状态导致的崩溃。
-        # 解释: 将状态后端从默认的内存(HashMap)切换到基于磁盘的 RocksDB。
-        #       这能防止状态数据过大导致的内存溢出，是 Flink 生产部署的最佳实践。
-        {
-          name  = "FLINK_PROPERTIES",
-          value = "state.backend: rocksdb"
+          value = "taskmanager.numberOfTaskSlots: 2\nstate.backend: rocksdb"
         }
       ],
 
