@@ -132,19 +132,17 @@ resource "aws_ecs_task_definition" "producer_task" {
       ],
 
       # ---------------------------------------------------------------------------------
-      # 🔥 关键修正: 通过单一环境变量集中配置 Flink 核心参数
+      # 🔥 最终修正: 使用独立的、明确的环境变量来传递 Flink 配置
       # ---------------------------------------------------------------------------------
       environment = [
-        # 原因: 解决 "NoResourceAvailableException" 并提高稳定性。
-        # 解释: 根据 Flink 官方文档，多个动态配置应通过一个名为 FLINK_PROPERTIES
-        #       的环境变量传递，并用换行符 (\n) 分隔。此方法可确保所有配置都生效。
-        #       - taskmanager.numberOfTaskSlots: 解决资源不足的问题。
-        #       - state.backend: 切换到生产级的 RocksDB 状态后端，避免内存溢出。
         {
           name  = "FLINK_PROPERTIES",
-          value = "taskmanager.numberOfTaskSlots: 2\nstate.backend: rocksdb"
+          value = <<-EOT
+            taskmanager.numberOfTaskSlots: 2
+            state.backend: rocksdb
+            EOT
         }
-      ],
+      ]
 
       # 其他配置保持不变
       linuxParameters = {
