@@ -132,17 +132,35 @@ resource "aws_ecs_task_definition" "producer_task" {
       ],
 
       # ---------------------------------------------------------------------------------
-      # 🔥 最终修正: 使用独立的、明确的环境变量来传递 Flink 配置
+      # 🔥 最终的、最权威的修正: 使用独立的、明确的环境变量来传递 Flink 配置
       # ---------------------------------------------------------------------------------
       environment = [
+        # 原因: 解决 "NoResourceAvailableException" 错误。
+        # 解释: 这是向 Flink 明确传递配置的最可靠方法。环境变量 FLINK_TASKMANAGER_NUMBEROFTASKSLOTS
+        #       会被 Flink 启动脚本自动转换为配置项 "taskmanager.numberOfTaskSlots"。
+        #       这确保了 Flink 知道它有多少可用的处理槽。
         {
-          name  = "FLINK_PROPERTIES",
-          value = <<-EOT
-            taskmanager.numberOfTaskSlots: 2
-            state.backend: rocksdb
-            EOT
+          name  = "FLINK_TASKMANAGER_NUMBEROFTASKSLOTS",
+          value = "2"
+        },
+        # 原因: 提高生产环境下的稳定性和可扩展性。
+        # 解释: 环境变量 FLINK_STATE_BACKEND 会被转换为配置项 "state.backend"。
+        #       我们将状态后端从默认的内存(HashMap)切换到基于磁盘的 RocksDB，
+        #       以防止因状态数据过大导致的内存溢出，这是 Flink 生产部署的最佳实践。
+        {
+          name  = "FLINK_STATE_BACKEND",
+          value = "rocksdb"
+        },
+        # 原因: 解决因内存不足导致的随机崩溃和重启循环。
+        # 解释: 🔥 这是最关键的配置。我们明确告诉 Flink 进程它总共能用多少内存。
+        #       这个值应该略小于容器的总内存 (我们在 dev.tfvars 中设置为 4096MB)，
+        #       为操作系统和 JVM 本身留出一些开销。Flink 会基于这个总大小，
+        #       自动计算堆内存、网络内存、RocksDB 缓存等各个部分的大小。
+        {
+          name  = "FLINK_TASKMANAGER_MEMORY_PROCESS_SIZE",
+          value = "3686m" # 约等于 4096MB * 0.9
         }
-      ]
+      ],
 
       # 其他配置保持不变
       linuxParameters = {

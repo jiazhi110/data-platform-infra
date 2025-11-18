@@ -58,8 +58,8 @@ flink_task_family_suffix = "family"
 # ECR task cpu for development 512:.5cpu
 flink_task_cpu = "512"
 
-# ECR task memory for development 3072:3GB
-flink_task_memory = "3072"
+# ECR task memory for development 4096:4GB
+flink_task_memory = "4096"
 
 # Glue Database Name for development
 # glue_database_name_suffix = "glue_dev_db"
