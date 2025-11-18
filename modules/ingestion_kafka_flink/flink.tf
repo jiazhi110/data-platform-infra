@@ -396,10 +396,15 @@ resource "aws_s3_bucket" "flink_output_bucket" {
 }
 
 # 为 S3 桶设置 ACL (修复弃用警告)
+# 原因: AWS S3 默认启用 "Bucket owner enforced" 模式，该模式禁用 ACLs。
+#       尝试为禁用 ACL 的桶设置 ACL 会导致 "AccessControlListNotSupported" 错误。
+#       推荐使用桶策略 (Bucket Policy) 来管理权限。
+/*
 resource "aws_s3_bucket_acl" "flink_output_bucket_acl" {
   bucket = aws_s3_bucket.flink_output_bucket.id
   acl    = "private"
 }
+*/
 
 # 阻止所有公共访问，确保 S3 桶的安全性
 resource "aws_s3_bucket_public_access_block" "flink_output_bucket_public_access_block" {
