@@ -116,65 +116,175 @@ resource "aws_ecs_task_definition" "producer_task" {
   #                                  定义的 ENTRYPOINT，从而以“应用模式”启动 Flink 作业。
   # 3. 端口映射: 仍然保留 8081 端口，以便可以访问 Flink 作业的 Web UI 进行监控。
   # ---------------------------------------------------------------------------------
+  # container_definitions = jsonencode([
+  #   {
+  #     name      = "flink-application", # 单一容器，名称可以自定义
+  #     image     = var.flink_image_url,
+  #     essential = true,
+
+  #     # 注意: 'entryPoint' 和 'command' 已被移除，以使用 Dockerfile 中的定义。
+  #     # 你的 Dockerfile 应该包含类似这样的命令:
+  #     # ENTRYPOINT ["/opt/flink/bin/flink-entrypoint.sh", "run-application", ...]
+
+  #     # 端口映射，用于访问 Flink Web UI
+  #     portMappings = [
+  #       { containerPort = 8081, hostPort = 8081, protocol = "tcp" }
+  #     ],
+
+  #     # ---------------------------------------------------------------------------------
+  #     # 🔥 最终的、最权威的修正: 使用独立的、明确的环境变量来传递 Flink 配置
+  #     # ---------------------------------------------------------------------------------
+  #     environment = [
+  #       # 原因: 解决 "NoResourceAvailableException" 错误。
+  #       # 解释: 这是向 Flink 明确传递配置的最可靠方法。环境变量 FLINK_TASKMANAGER_NUMBEROFTASKSLOTS
+  #       #       会被 Flink 启动脚本自动转换为配置项 "taskmanager.numberOfTaskSlots"。
+  #       #       这确保了 Flink 知道它有多少可用的处理槽。
+  #       {
+  #         name  = "FLINK_TASKMANAGER_NUMBEROFTASKSLOTS",
+  #         value = "2"
+  #       },
+  #       # 原因: 提高生产环境下的稳定性和可扩展性。
+  #       # 解释: 环境变量 FLINK_STATE_BACKEND 会被转换为配置项 "state.backend"。
+  #       #       我们将状态后端从默认的内存(HashMap)切换到基于磁盘的 RocksDB，
+  #       #       以防止因状态数据过大导致的内存溢出，这是 Flink 生产部署的最佳实践。
+  #       {
+  #         name  = "FLINK_STATE_BACKEND",
+  #         value = "rocksdb"
+  #       },
+  #       # 原因: 解决因内存不足导致的随机崩溃和重启循环。
+  #       # 解释: 🔥 这是最关键的配置。我们明确告诉 Flink 进程它总共能用多少内存。
+  #       #       这个值应该略小于容器的总内存 (我们在 dev.tfvars 中设置为 4096MB)，
+  #       #       为操作系统和 JVM 本身留出一些开销。Flink 会基于这个总大小，
+  #       #       自动计算堆内存、网络内存、RocksDB 缓存等各个部分的大小。
+  #       {
+  #         name  = "FLINK_TASKMANAGER_MEMORY_PROCESS_SIZE",
+  #         value = "3686m" # 约等于 4096MB * 0.9
+  #       }
+  #     ],
+
+  #     # 其他配置保持不变
+  #     linuxParameters = {
+  #       initProcessEnabled = true
+  #     },
+  #     executeCommandConfiguration = {
+  #       enabled = true
+  #     },
+  #     logConfiguration = {
+  #       logDriver = "awslogs",
+  #       options = {
+  #         "awslogs-group"         = aws_cloudwatch_log_group.flink_logs.name,
+  #         "awslogs-region"        = var.aws_region,
+  #         "awslogs-stream-prefix" = "flink-application" # 使用统一的日志前缀
+  #       }
+  #     }
+  #   }
+  # ])
+
   container_definitions = jsonencode([
+    # =================================================================================
+    # 容器 1: JobManager (Master)
+    # =================================================================================
     {
-      name      = "flink-application", # 单一容器，名称可以自定义
+      name      = "jobmanager",
       image     = var.flink_image_url,
-      essential = true,
+      essential = true, # 如果 JM 挂了，整个 Task 重启
 
-      # 注意: 'entryPoint' 和 'command' 已被移除，以使用 Dockerfile 中的定义。
-      # 你的 Dockerfile 应该包含类似这样的命令:
-      # ENTRYPOINT ["/opt/flink/bin/flink-entrypoint.sh", "run-application", ...]
+      # Dockerfile 的默认 CMD 是 ["standalone-job", ...]，这里不需要覆盖
+      # 它是 Application Mode 的入口
 
-      # 端口映射，用于访问 Flink Web UI
+      # 端口映射：暴露 Web UI
       portMappings = [
         { containerPort = 8081, hostPort = 8081, protocol = "tcp" }
       ],
 
-      # ---------------------------------------------------------------------------------
-      # 🔥 最终的、最权威的修正: 使用独立的、明确的环境变量来传递 Flink 配置
-      # ---------------------------------------------------------------------------------
+      # 环境变量配置
       environment = [
-        # 原因: 解决 "NoResourceAvailableException" 错误。
-        # 解释: 这是向 Flink 明确传递配置的最可靠方法。环境变量 FLINK_TASKMANAGER_NUMBEROFTASKSLOTS
-        #       会被 Flink 启动脚本自动转换为配置项 "taskmanager.numberOfTaskSlots"。
-        #       这确保了 Flink 知道它有多少可用的处理槽。
         {
-          name  = "FLINK_TASKMANAGER_NUMBEROFTASKSLOTS",
-          value = "2"
-        },
-        # 原因: 提高生产环境下的稳定性和可扩展性。
-        # 解释: 环境变量 FLINK_STATE_BACKEND 会被转换为配置项 "state.backend"。
-        #       我们将状态后端从默认的内存(HashMap)切换到基于磁盘的 RocksDB，
-        #       以防止因状态数据过大导致的内存溢出，这是 Flink 生产部署的最佳实践。
-        {
-          name  = "FLINK_STATE_BACKEND",
-          value = "rocksdb"
-        },
-        # 原因: 解决因内存不足导致的随机崩溃和重启循环。
-        # 解释: 🔥 这是最关键的配置。我们明确告诉 Flink 进程它总共能用多少内存。
-        #       这个值应该略小于容器的总内存 (我们在 dev.tfvars 中设置为 4096MB)，
-        #       为操作系统和 JVM 本身留出一些开销。Flink 会基于这个总大小，
-        #       自动计算堆内存、网络内存、RocksDB 缓存等各个部分的大小。
-        {
-          name  = "FLINK_TASKMANAGER_MEMORY_PROCESS_SIZE",
-          value = "3686m" # 约等于 4096MB * 0.9
+          name  = "FLINK_PROPERTIES",
+          value = <<EOT
+            # --- 基础网络配置 ---
+            jobmanager.rpc.address: localhost
+            # 关键修改：改为 0.0.0.0，否则外部浏览器无法访问 Web UI
+            rest.address: localhost
+            rest.bind-address: localhost
+
+            # --- 资源调度配置 ---
+            # 必须与 TaskManager 的 Slot 数量一致
+            taskmanager.numberOfTaskSlots: 1
+            parallelism.default: 1
+
+            # --- 状态后端 (RocksDB) ---
+            state.backend: rocksdb
+            state.checkpoints.dir: s3://${var.flink_output_bucket}/checkpoints/
+            state.savepoints.dir: s3://${var.flink_output_bucket}/savepoints/
+            execution.checkpointing.interval: 60000
+            execution.checkpointing.mode: EXACTLY_ONCE
+
+            # --- S3 访问配置 用minio的方式 已经注释掉了，如果是本地的话，就用这个。 ---
+            # s3.endpoint: http://minio:9000
+            # s3.path.style.access: true
+            # s3.access-key: minioadmin
+            # s3.secret-key: minioadmin
+
+            # --- 内存配置 (重要) ---
+            # JobManager 不需要太多内存，省下来给 TM
+            jobmanager.memory.process.size: 1024m
+            EOT
         }
       ],
 
-      # 其他配置保持不变
-      linuxParameters = {
-        initProcessEnabled = true
-      },
-      executeCommandConfiguration = {
-        enabled = true
-      },
       logConfiguration = {
         logDriver = "awslogs",
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.flink_logs.name,
           "awslogs-region"        = var.aws_region,
-          "awslogs-stream-prefix" = "flink-application" # 使用统一的日志前缀
+          "awslogs-stream-prefix" = "jobmanager"
+        }
+      }
+    },
+
+    # =================================================================================
+    # 容器 2: TaskManager (Worker) - 必须添加！
+    # =================================================================================
+    {
+      name      = "taskmanager",
+      image     = var.flink_image_url, # 使用同一个镜像
+      essential = true, # 如果 TM 挂了，Task 也应该重启恢复
+
+      # 🔥 关键：覆盖 CMD，强制以 TaskManager 模式启动
+      command   = ["taskmanager"],
+
+      # 环境变量配置
+      environment = [
+        {
+          name  = "FLINK_PROPERTIES",
+          value = <<EOT
+            # --- 连接 Master ---
+            # 因为在同一个 Task (awsvpc) 里，localhost 就能通
+            jobmanager.rpc.address: localhost
+            taskmanager.host: localhost
+
+            # --- 资源配置 ---
+            taskmanager.numberOfTaskSlots: 1
+            taskmanager.memory.process.size: 2500m 
+            # (注意: JM(1G) + TM(2.5G) < Task总内存(4G)，留 500MB 给系统)
+
+            # --- 其他配置 (必须保持一致) ---
+            # state.backend: rocksdb
+            # s3.endpoint: http://minio:9000
+            # s3.path.style.access: true
+            # s3.access-key: minioadmin
+            # s3.secret-key: minioadmin
+            EOT
+        }
+      ],
+
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.flink_logs.name,
+          "awslogs-region"        = var.aws_region,
+          "awslogs-stream-prefix" = "taskmanager"
         }
       }
     }
