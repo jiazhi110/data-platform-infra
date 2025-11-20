@@ -194,7 +194,7 @@ resource "aws_ecs_task_definition" "producer_task" {
 
       # 端口映射：暴露 Web UI
       portMappings = [
-        { containerPort = 8081, hostPort = 8081, protocol = "tcp" }
+        { containerPort = 8081, protocol = "tcp" }
       ],
 
       # 环境变量配置
@@ -204,9 +204,9 @@ resource "aws_ecs_task_definition" "producer_task" {
           value = <<EOT
             # --- 基础网络配置 ---
             jobmanager.rpc.address: localhost
-            # 关键修改：改为 0.0.0.0，否则外部浏览器无法访问 Web UI
-            rest.address: localhost
-            rest.bind-address: localhost
+            # 关键修改：改为 0.0.0.0，否则外部浏览器无法访问 Web UI，记着不能用 localhost，用它会连接不上 web ui. 0.0.0.0 是一个特殊地址，意思是“监听这台机器上的所有 IP 地址”。
+            rest.address: 0.0.0.0
+            # rest.bind-address: localhost
 
             # --- 资源调度配置 ---
             # 必须与 TaskManager 的 Slot 数量一致
