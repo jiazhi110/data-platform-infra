@@ -33,7 +33,7 @@ resource "aws_glue_job" "top_produce_etl_job" {
   name     = "${var.project_name}-${var.environment}-top-produce-etl"
   role_arn = aws_iam_role.glue_job_role.arn
 
-  
+
   # command {
   #   script_location = var.glue_script_location
   #   python_version  = "3" # For Glue version 4.0, Python 3.10 is used.
@@ -43,7 +43,7 @@ resource "aws_glue_job" "top_produce_etl_job" {
     # 脚本位置：指向 S3 中的主程序文件
     # 注意：你需要配置 CI/CD 将代码上传到此路径
     script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/main/job_runner.py"
-    python_version  = "3"
+    python_version  = "3.9"
   }
 
   glue_version = var.glue_version

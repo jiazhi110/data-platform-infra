@@ -12,6 +12,12 @@ variable "environment" {
   type        = string
 }
 
+variable "aws_region" {
+  description = "AWS region to deploy resources"
+  type        = string
+  default     = "us-east-1"
+}
+
 # 在etl_assets s3 中 declared了。
 # variable "glue_script_location" {
 #   description = "The S3 path to the Glue ETL script (e.g., 's3://your-bucket/scripts/etl.py')."

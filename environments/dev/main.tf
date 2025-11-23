@@ -73,6 +73,7 @@ module "top_produce_etl" {
 
   project_name = var.project_name
   environment  = var.environment
+  aws_region   = var.aws_region
 
   # glue_script_location = "s3://${module.ingestion.flink_output_bucket}/scripts/main/job_runner.py" # Assuming script is uploaded here 在etl_assets s3 中 declared了。
 
