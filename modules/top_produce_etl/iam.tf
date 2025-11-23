@@ -57,7 +57,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "s3:ListBucket",
           "s3:PutObject" # 如果 Glue 需要写回结果到数据桶
         ]
-        resources = [
+        Resource = [
           "arn:aws:s3:::${var.destination_s3_bucket_name}",
           "arn:aws:s3:::${var.destination_s3_bucket_name}/*"
         ]
