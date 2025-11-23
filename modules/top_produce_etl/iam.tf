@@ -61,6 +61,18 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "arn:aws:s3:::${var.destination_s3_bucket_name}",
           "arn:aws:s3:::${var.destination_s3_bucket_name}/*"
         ]
+      },
+      # 权限 C: 允许将此角色传递给 Glue 服务
+      {
+        Sid    = "PassRoleToGlue"
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = aws_iam_role.glue_job_role.arn
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "glue.amazonaws.com"
+          }
+        }
       }
     ]
   })
