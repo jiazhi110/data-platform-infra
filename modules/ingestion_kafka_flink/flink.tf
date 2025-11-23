@@ -336,9 +336,28 @@ resource "null_resource" "stop_producer_service" {
   # This provisioner runs when the resource is destroyed.
   provisioner "local-exec" {
     when = destroy
-    # Reference the triggers via 'self' to comply with destroy-time provisioner rules.
+    # Step 1: Scale down the service to 0. This handles tasks managed by the service.
     command    = "aws ecs update-service --cluster ${self.triggers.cluster_name} --service ${self.triggers.service_name} --desired-count 0 --region ${self.triggers.aws_region}"
-    on_failure = "continue" # 如果服务已经不存在或不活跃，忽略错误并继续销毁过程
+    on_failure = continue # 如果服务已经不存在或不活跃，忽略错误并继续销毁过程
+  }
+
+  # 🔥 关键修正: 添加一个新的 provisioner 来停止所有非 Service 管理的任务 (例如由 EventBridge 启动的任务)
+  provisioner "local-exec" {
+    when = destroy
+    # Step 2: List all remaining running tasks in the cluster and forcefully stop them.
+    # This is necessary to remove tasks started by EventBridge, which would otherwise block cluster deletion.
+    command = <<EOT
+      TASKS=$(aws ecs list-tasks --cluster ${self.triggers.cluster_name} --region ${self.triggers.aws_region} --query 'taskArns[*]' --output text)
+      if [ -n "$TASKS" ]; then
+        echo "Stopping tasks in cluster ${self.triggers.cluster_name}: $TASKS"
+        for task in $TASKS; do
+          aws ecs stop-task --cluster ${self.triggers.cluster_name} --task $task --region ${self.triggers.aws_region} --reason "Terraform destroy"
+        done
+      else
+        echo "No running tasks found in cluster ${self.triggers.cluster_name} to stop."
+      fi
+    EOT
+    on_failure = continue # 如果没有任务或停止失败，也继续执行
   }
 }
 

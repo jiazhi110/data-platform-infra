@@ -67,13 +67,20 @@ module "ingestion" {
 
 }
 
-# # Module 3: Top Produce ETL
-# module "top_produce_etl" {
-#   source = "../../modules/top_produce_etl"
+# Module 3: Top Produce ETL
+module "top_produce_etl" {
+  source = "../../modules/top_produce_etl"
 
-#   project_name        = var.project_name
-#   environment         = var.environment
-#   vpc_id              = module.networking.vpc_id
-#   subnet_ids          = module.networking.private_subnets
-#   glue_database_name  = local.glue_database_name
-# }
+  project_name = var.project_name
+  environment  = var.environment
+
+  # glue_script_location = "s3://${module.ingestion.flink_output_bucket}/scripts/main/job_runner.py" # Assuming script is uploaded here 在etl_assets s3 中 declared了。
+
+  # The source bucket is the Flink output bucket from the ingestion module
+  source_s3_bucket_name = module.ingestion.flink_output_bucket
+  # For now, we'll use the same bucket for the destination, but with a different prefix (defined in the module)
+  destination_s3_bucket_name = module.ingestion.flink_output_bucket
+
+  glue_trigger_schedule = var.glue_trigger_schedule
+  crawler_schedule      = var.crawler_schedule
+}

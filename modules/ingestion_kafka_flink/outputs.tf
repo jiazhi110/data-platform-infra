@@ -31,3 +31,8 @@ output "mock_data_task_family" {
   value       = aws_ecs_task_definition.mock_data_task.family
 }
 
+output "flink_output_bucket" {
+  description = "The name of the S3 bucket used for Flink output and scripts."
+  value       = aws_s3_bucket.flink_output_bucket.bucket
+}
+

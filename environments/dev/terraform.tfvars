@@ -92,3 +92,7 @@ mock_data_schedule = "cron(0/3 * * * ? *)"
 runner_security_group_name = "ingestion_ec2_workflow_seflhostedrunner_sg"
 
 runner_iam_role_name = "ingestion_ec2_ec2_role"
+
+# --- top_produce_etl 模块变量赋值 ---
+glue_trigger_schedule = "cron(0 2 * * ? *)" # Daily at 2:00 AM UTC
+crawler_schedule      = "cron(0 3 * * ? *)" # Daily at 3:00 AM UTC, one hour after the job

@@ -181,3 +181,15 @@ variable "runner_iam_role_name" {
   description = "The name of the IAM role for the EC2 runner instance."
   type        = string
 }
+
+# --- Top Produce ETL Module Variables ---
+
+variable "glue_trigger_schedule" {
+  description = "The cron schedule for the Glue job trigger."
+  type        = string
+}
+
+variable "crawler_schedule" {
+  description = "The cron schedule for the Glue crawler."
+  type        = string
+}
