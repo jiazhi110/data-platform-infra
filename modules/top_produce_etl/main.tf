@@ -42,7 +42,8 @@ resource "aws_glue_job" "top_produce_etl_job" {
   command {
     # 脚本位置：指向 S3 中的主程序文件
     # 注意：你需要配置 CI/CD 将代码上传到此路径
-    script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/main/job_runner.py"
+    # script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/main/job_runner.py"
+    script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/job.zip"
     python_version  = "3.9"
   }
 
@@ -58,6 +59,8 @@ resource "aws_glue_job" "top_produce_etl_job" {
   # 默认参数配置 (传递给 Spark 脚本的参数)
   default_arguments = {
     # --- 1. Glue 系统参数 (System Arguments) ---
+    # 告诉 Glue 你的主脚本在 zip 包内的路径
+    "--script"                           = "src/main/job_runner.py",
     
     # 指定作业语言类型，对于 Spark 任务通常是 "python" (PySpark) 或 "scala"
     "--job-language"                     = "python"
