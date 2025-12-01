@@ -6,9 +6,9 @@ on:
 #     # 只响应事件类型为 'flink-deploy' 的触发
 #     types: [flink-deploy]
 
-  schedule:
+  # schedule:
     # 每天 UTC 5:00 (东八区时间 13:00) 自动触发 dev 环境部署
-    - cron: '0 5 * * *'
+    # - cron: '0 5 * * *'
 
   # 触发器 2: 允许在 GitHub UI 上手动触发此 workflow
   workflow_dispatch:
