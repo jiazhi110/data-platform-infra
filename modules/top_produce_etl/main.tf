@@ -43,7 +43,10 @@ resource "aws_glue_job" "top_produce_etl_job" {
     # 脚本位置：指向 S3 中的主程序文件
     # 注意：你需要配置 CI/CD 将代码上传到此路径
     # script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/main/job_runner.py"
-    script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/job.zip"
+    # script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/job.zip"
+    # 关键点：这里必须指向 .py 文件，而不是 .zip
+    # 这样在 AWS Console 里就能看到正常的代码，而不是乱码
+    script_location = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/job_runner.py"
     python_version  = "3.9"
   }
 
@@ -60,7 +63,14 @@ resource "aws_glue_job" "top_produce_etl_job" {
   default_arguments = {
     # --- 1. Glue 系统参数 (System Arguments) ---
     # 告诉 Glue 你的主脚本在 zip 包内的路径
-    "--script"                           = "src/main/job_runner.py",
+    # 改了，用 script_location 了，不然在web console 中有乱码，garbled text
+    # "--script"                           = "src/main/job_runner.py",
+
+    # 关键点：这里指向 .zip 包 (包含 src 文件夹)
+    "--extra-py-files" = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/job.zip"
+    
+    # 配置文件路径 (注意：您的代码是用 boto3 读取这个文件的，所以它必须作为一个单独的文件存在于 S3，不能只在 zip 里)
+    "--config_path"    = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/config/config_dev.yaml"
     
     # 指定作业语言类型，对于 Spark 任务通常是 "python" (PySpark) 或 "scala"
     "--job-language"                     = "python"
@@ -78,12 +88,6 @@ resource "aws_glue_job" "top_produce_etl_job" {
     
     # 临时目录。Glue 运行时需要暂存一些中间文件，最好显式指定，方便清理。
     "--TempDir"                          = "s3://${aws_s3_bucket.etl_assets.bucket}/temporary/"
-    
-    # 引用额外的 Python 文件。
-    # 你的 ETL 项目里有 src/utils/*.py，这些不是主脚本，而是依赖库。
-    # 我们需要把它们打包成一个 zip 文件 (utils.zip)，上传到 S3。
-    # Glue 启动时，会自动下载这个 zip 并解压到 PYTHONPATH 里，这样你的 job_runner.py 才能 `import utils.logger`。
-    "--extra-py-files"                   = "s3://${aws_s3_bucket.etl_assets.bucket}/scripts/utils.zip"
 
     # --- 2. 用户自定义参数 (User Arguments) ---
     # 这些参数会原封不动地传给你的 sys.argv，你的 Python 脚本需要解析它们。
