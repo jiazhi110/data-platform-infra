@@ -551,7 +551,6 @@ resource "aws_s3_bucket" "flink_output_bucket" {
 
   tags = {
     Name        = "${var.project_name}-${var.environment}-flink-output"
-    Environment = var.environment
   }
 }
 

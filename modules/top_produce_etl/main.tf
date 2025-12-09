@@ -9,7 +9,6 @@ resource "aws_s3_bucket" "etl_assets" {
 
   tags = {
     Name        = "${var.project_name}-etl-assets"
-    Environment = var.environment
   }
 }
 
@@ -104,8 +103,6 @@ resource "aws_glue_job" "top_produce_etl_job" {
 
   tags = {
     Name        = "${var.project_name}-${var.environment}-top-produce-etl"
-    Project     = var.project_name
-    Environment = var.environment
   }
 }
 
@@ -129,8 +126,6 @@ resource "aws_glue_trigger" "etl_trigger" {
 
   tags = {
     Name        = "${var.project_name}-${var.environment}-etl-trigger"
-    Project     = var.project_name
-    Environment = var.environment
   }
 }
 
@@ -189,8 +184,4 @@ resource "aws_glue_crawler" "etl_crawler" {
   
   # 也可以给 Crawler 加个定时，比如 Job 跑完后 1 小时跑一次
   schedule = var.crawler_schedule
-
-  tags = {
-    Environment = var.environment
-  }
 }

@@ -14,7 +14,6 @@ resource "aws_s3_bucket" "athena_results" {
 
   tags = {
     Name        = "${var.project_name}-athena-results"
-    Environment = var.environment
   }
 }
 
@@ -83,8 +82,4 @@ resource "aws_athena_workgroup" "etl_workgroup" {
 
   force_destroy = true # 允许删除即使里面有未完成的查询记录
   state         = "ENABLED"
-
-  tags = {
-    Environment = var.environment
-  }
 }
