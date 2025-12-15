@@ -15,7 +15,7 @@ resource "aws_cloudwatch_event_rule" "flink_task_stop" {
 }
 
 # 触发目标：发送到 SNS
-resource "aws_cloudwatch_event_rule" "flink_sns_target" {
+resource "aws_cloudwatch_event_target" "flink_sns_target" {
   rule      = aws_cloudwatch_event_rule.flink_task_stop.name
   target_id = "SendToSNS"
   arn       = var.sns_alert_topic_arn
