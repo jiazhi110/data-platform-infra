@@ -25,6 +25,6 @@ resource "aws_cloudwatch_event_target" "sns_target" {
       state   = "$.detail.state",
       error   = "$.detail.message"
     }
-    input_template = "ALERT: Glue Job <jobName> has <state>. Error: <error>"
+    input_template = jsonencode("ALERT: Glue Job <jobName> has <state>. Error: <error>")
   }
 }

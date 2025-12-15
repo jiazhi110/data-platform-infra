@@ -25,6 +25,6 @@ resource "aws_cloudwatch_event_target" "flink_sns_target" {
       taskArn       = "$.detail.taskArn",
       stoppedReason = "$.detail.stoppedReason"
     }
-    input_template = "CRITICAL: Flink Task <taskArn> has STOPPED. Reason: <stoppedReason>"
+    input_template = jsonencode("CRITICAL: Flink Task <taskArn> has STOPPED. Reason: <stoppedReason>")
   }
 }
