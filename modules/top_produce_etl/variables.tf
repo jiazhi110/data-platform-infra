@@ -63,4 +63,8 @@ variable "crawler_schedule" {
   type        = string
   default     = null
 }
-      
+
+variable "sns_alert_topic_arn" {
+  description = "The ARN of the SNS topic to send alerts to."
+  type        = string
+}

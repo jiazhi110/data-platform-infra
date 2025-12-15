@@ -193,3 +193,9 @@ variable "crawler_schedule" {
   description = "The cron schedule for the Glue crawler."
   type        = string
 }
+
+# --- Alerting ---
+variable "alert_email" {
+  description = "Email address for receiving alerts"
+  type        = string
+}

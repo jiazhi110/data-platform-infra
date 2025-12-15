@@ -152,3 +152,8 @@ variable "runner_iam_role_name" {
   description = "The name of the IAM role attached to the EC2 runner instance for manual Kafka consumption."
   type        = string
 }
+
+variable "sns_alert_topic_arn" {
+  description = "The ARN of the SNS topic to send alerts to."
+  type        = string
+}

@@ -116,7 +116,24 @@ resource "aws_ecs_task_definition" "mock_data_task" {
 # ------------------------------------------------------------------------------
 # EventBridge Rule for Scheduled Mock Data Task
 # ------------------------------------------------------------------------------
+# 简单的回答：
+# 在 Terraform (AWS Provider) 中，`aws_cloudwatch_event_rule` 就是 EventBridge Rule。虽然名字还叫 CloudWatch，但它实际上创建的就是 EventBridge 服务里的 Rule。
 
+# 详细解释：
+
+#  1. 历史原因 (History):
+#      * 最初，这个服务叫 CloudWatch Events。
+#      * Terraform 当时就开发了 aws_cloudwatch_event_rule 这个资源来对应它。
+#      * 后来，AWS 把这个服务升级并改名为 EventBridge。
+#      * 为了保持向后兼容性 (Backward Compatibility)，防止所有老用户的代码报错，Terraform 团队保留了 aws_cloudwatch_event_rule 这个名字。
+
+#  2. 新资源 (`aws_scheduler_schedule` 等):
+#      * Terraform 后来引入了 aws_cloudwatch_event_bus 等新资源来支持 EventBridge 的新特性（比如自定义总线）。
+#      * 但对于最基础的 Rule（规则）和 Target（目标），大家依然普遍使用 aws_cloudwatch_event_rule。
+#      * 注意：最近 AWS 推出了 EventBridge Scheduler，这是个更强大的定时任务服务，Terraform 里对应的是 aws_scheduler_schedule。但对于事件驱动（比如“任务失败了触发报警”），我们依然使用 aws_cloudwatch_event_rule。
+
+# 结论：
+# 虽然你在 Terraform 代码里写的是 resource "aws_cloudwatch_event_rule" ...，但当你去 AWS 控制台看的时候，请去 Amazon EventBridge -> Rules 页面找它。它们是同一个东西。
 resource "aws_cloudwatch_event_rule" "mock_data_schedule_rule" {
   count               = var.mock_data_schedule == null ? 0 : 1
   name                = "${var.project_name}-${var.environment}-mock-data-schedule"

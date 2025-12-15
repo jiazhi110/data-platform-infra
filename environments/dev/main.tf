@@ -27,6 +27,15 @@ data "terraform_remote_state" "network" {
   }
 }
 
+# --- Monitoring Module (新增) ---
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  project_name = var.project_name
+  environment  = var.environment
+  alert_email  = var.alert_email
+}
+
 # Module 2: Ingestion Kafka Flink ---
 module "ingestion" {
   source = "../../modules/ingestion_kafka_flink"
@@ -50,14 +59,12 @@ module "ingestion" {
   kafka_version              = var.kafka_version
   msk_cluster_name           = local.msk_cluster_name
   msk_sg_name                = local.msk_sg_name
-  # msk_scram_name             = local.msk_scram_name
-  # kafka_scram_user           = var.kafka_scram_user
-  msk_logs_bucket_prefix = var.msk_logs_bucket_prefix
-  flink_task_family      = local.flink_task_family
-  flink_task_cpu         = var.flink_task_cpu
-  flink_task_memory      = var.flink_task_memory
-  flink_image_url        = data.aws_ssm_parameter.flink_image_url.value
-  mockdata_image_url     = data.aws_ssm_parameter.mockdata_image_url.value
+  msk_logs_bucket_prefix     = var.msk_logs_bucket_prefix
+  flink_task_family          = local.flink_task_family
+  flink_task_cpu             = var.flink_task_cpu
+  flink_task_memory          = var.flink_task_memory
+  flink_image_url            = data.aws_ssm_parameter.flink_image_url.value
+  mockdata_image_url         = data.aws_ssm_parameter.mockdata_image_url.value
 
 
   flink_output_bucket        = var.flink_output_bucket
@@ -65,6 +72,8 @@ module "ingestion" {
   runner_security_group_name = var.runner_security_group_name
   runner_iam_role_name       = var.runner_iam_role_name
 
+  # --- 报警配置 ---
+  sns_alert_topic_arn = module.monitoring.sns_topic_arn
 }
 
 # Module 3: Top Produce ETL
@@ -84,4 +93,7 @@ module "top_produce_etl" {
 
   glue_trigger_schedule = var.glue_trigger_schedule
   crawler_schedule      = var.crawler_schedule
+
+  # --- 报警配置 ---
+  sns_alert_topic_arn = module.monitoring.sns_topic_arn
 }
