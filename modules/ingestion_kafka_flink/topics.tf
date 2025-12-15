@@ -39,8 +39,9 @@ resource "kafka_topic" "produce_events" {
 
   # You can also set other configurations for the Topic
   config = {
-    "cleanup.policy" = "delete"
-    "retention.ms"   = "86400000" # Retain for 1 day
+    "cleanup.policy"      = "delete"
+    "retention.ms"        = "86400000" # Retain for 1 day
+    "min.insync.replicas" = "1"        # 修复 AWS 警告：即使一个副本不可用，也能继续写入 MinISR must be one less than RF to preserve high availability.
   }
 
   lifecycle {
