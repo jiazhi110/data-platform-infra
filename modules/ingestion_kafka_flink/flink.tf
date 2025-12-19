@@ -642,6 +642,17 @@ resource "aws_ssm_parameter" "kafka_consumer_group_id" {
   }
 }
 
+# 存储 Flink DLQ 的 S3 桶路径
+resource "aws_ssm_parameter" "flink_dlq_s3_path" {
+  name  = "/${var.project_name}/${var.environment}/s3/flink_dlq_path"
+  type  = "String"
+  value = "s3://${aws_s3_bucket.flink_output_bucket.bucket}/dlq/"
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-flink-dlq-path"
+  }
+}
+
 
 
 # ------------------------------------------------------------------------------
