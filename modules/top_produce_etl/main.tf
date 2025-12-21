@@ -55,7 +55,7 @@ resource "aws_glue_job" "top_produce_etl_job" {
   worker_type         = var.worker_type
   number_of_workers   = var.number_of_workers
   timeout             = 60 # 超时时间 60 分钟
-  max_retries         = 0    # No retries on failure by default
+  max_retries         = 1    # 生产环境建议设为 1 或 3，Dev 环境可以设 1 容错
 
   # --- Default arguments passed to the script ---
   # 默认参数配置 (传递给 Spark 脚本的参数)
@@ -131,7 +131,7 @@ resource "aws_glue_trigger" "etl_trigger" {
 
 # 定义 Glue 数据库 (逻辑容器)
 resource "aws_glue_catalog_database" "etl_database" {
-  name = "${var.project_name}_${var.environment}_db" # e.g., data_platform_dev_db
+  name = "${var.project_name}-${var.environment}-db" # e.g., data-platform-dev-db
 }
 
 # ------------------------------------------------------------------------------

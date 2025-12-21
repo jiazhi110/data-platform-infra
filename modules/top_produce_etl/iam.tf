@@ -28,7 +28,7 @@ resource "aws_iam_role_policy_attachment" "glue_service_policy" {
 # 3. 自定义策略：只控制 S3 访问
 #    这是我们需要手动控制的部分，特别是对数据桶的读写
 resource "aws_iam_role_policy" "glue_s3_access" {
-  name = "GlueS3Access"
+  name = "glue-s3-access-policy"
   role = aws_iam_role.glue_job_role.id
 
   policy = jsonencode({

@@ -69,7 +69,7 @@ data "aws_iam_policy_document" "mock_data_task_policy" {
 # 权限策略 (Permissions Policy)
 # Permission Policy（权限策略）：你还定义了角色的权限策略，告诉 AWS 这个角色可以访问Kafka 集群和SSM 参数。这部分控制的是角色可以做什么操作，也就是角色拥有的权限。
 resource "aws_iam_policy" "mock_data_task_policy" {
-  name   = "${var.project_name}-${var.environment}-MockDataTaskPolicy"
+  name   = "${var.project_name}-${var.environment}-mock-data-task-policy"
   policy = data.aws_iam_policy_document.mock_data_task_policy.json
 }
 

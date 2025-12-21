@@ -60,7 +60,7 @@ resource "aws_s3_bucket_public_access_block" "athena_results_block" {
 # 这样当你或者队友在控制台切换到这个 Workgroup 时，
 # 不需要手动填 S3 路径，直接就能跑查询，不会报错。
 resource "aws_athena_workgroup" "etl_workgroup" {
-  name = "${var.project_name}_${var.environment}_workgroup"
+  name = "${var.project_name}-${var.environment}-workgroup"
 
   configuration {
     # 强制将查询结果存入我们上面创建的桶

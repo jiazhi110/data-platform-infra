@@ -106,6 +106,34 @@ resource "aws_s3_bucket" "msk_logs_bucket" {
   }
 }
 
+# [新增] 阻止公网访问 (Block Public Access)
+resource "aws_s3_bucket_public_access_block" "msk_logs_block" {
+  bucket = aws_s3_bucket.msk_logs_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# [新增] 服务端加密 (Server-Side Encryption)
+resource "aws_s3_bucket_server_side_encryption_configuration" "msk_logs_encryption" {
+  bucket = aws_s3_bucket.msk_logs_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# [备忘] MSK 服务关联角色
+# 仅在新账号且从未手动创建过 Kafka 集群时需要启用。
+# 否则会报错 "Role already exists"。
+# resource "aws_iam_service_linked_role" "msk" {
+#   aws_service_name = "kafka.amazonaws.com"
+# }
+
 # 为 MSK Kafka 集群创建一个安全组，用于控制网络访问。
 resource "aws_security_group" "msk_sg" {
   name        = var.msk_sg_name
@@ -244,7 +272,20 @@ resource "aws_msk_cluster_policy" "main" {
             data.aws_caller_identity.me.arn
           ]
         },
-        Action   = "kafka-cluster:*", # 暂时允许所有操作，用于调试
+        Action = [
+          "kafka-cluster:Connect",         # Required for clients to connect
+          "kafka-cluster:DescribeCluster", # View cluster details
+          "kafka-cluster:AlterCluster",    # Modify cluster (e.g., for Terraform management)
+          "kafka-cluster:ReadData",        # Consume from topics
+          "kafka-cluster:WriteData",       # Produce to topics
+          "kafka-cluster:DescribeGroup",   # View consumer groups
+          "kafka-cluster:AlterGroup",      # Modify consumer groups
+          "kafka-cluster:DescribeTopic",   # View topics
+          "kafka-cluster:CreateTopic",     # Create new topics (if needed; remove if not)
+          "kafka-cluster:AlterTopic",      # Modify topics
+          "kafka-cluster:DeleteTopic"      # Delete topics (if needed; remove if not)
+        ],
+        # Action   = "kafka-cluster:*", # 暂时允许所有操作，用于调试
         Resource = aws_msk_cluster.kafka_cluster.arn
       }
     ]

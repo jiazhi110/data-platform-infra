@@ -452,7 +452,7 @@ resource "aws_iam_role" "ecs_task_role" {
 # 为这个角色创建一个内联策略，明确授予读取特定 Secret 的权限
 # 专门用来创建并附加 inline policy，只能属于某一个角色
 resource "aws_iam_role_policy" "read_kafka_secret_policy" {
-  name   = "ReadKafkaSecretPolicy"
+  name   = "read-kafka-secret-policy"
   role   = aws_iam_role.ecs_task_role.id
   policy = data.aws_iam_policy_document.ecs_task_policy.json
 }
@@ -551,6 +551,40 @@ resource "aws_s3_bucket" "flink_output_bucket" {
 
   tags = {
     Name        = "${var.project_name}-${var.environment}-flink-output"
+  }
+}
+
+# --- S3 桶生命周期管理 (新增) ---
+# 核心逻辑：区分业务数据与系统状态数据，对状态数据进行垃圾回收以节省成本。
+resource "aws_s3_bucket_lifecycle_configuration" "flink_output_lifecycle" {
+  bucket = aws_s3_bucket.flink_output_bucket.id
+
+  # 规则 1: 自动清理过期的 Checkpoints (Flink 自动生成)
+  rule {
+    id     = "expire-checkpoints"
+    status = "Enabled"
+
+    filter {
+      prefix = "checkpoints/"
+    }
+
+    expiration {
+      days = 3 # 保留最近 3 天的快照即可
+    }
+  }
+
+  # 规则 2: 自动清理过期的 Savepoints (手动触发)
+  rule {
+    id     = "expire-savepoints"
+    status = "Enabled"
+
+    filter {
+      prefix = "savepoints/"
+    }
+
+    expiration {
+      days = 7 # 手动存档保留时间稍长
+    }
   }
 }
 
