@@ -420,14 +420,14 @@ resource "aws_security_group" "ecs_tasks_sg" {
 
   tags = { Name = "${var.environment}-ecs-tasks-sg" }
 
-  # Reason for adding: To allow public access to the Flink UI on port 8081.
-  # WARNING: This exposes the Flink UI to the entire internet. Use with caution, especially in non-development environments.
+  # Reason for adding: To allow access to the Flink UI on port 8081.
+  # Security improvement: Restricting access to ONLY the Runner/Bastion security group.
   ingress {
-    description = "Allow public access to Flink UI"
-    from_port   = 8081
-    to_port     = 8081
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # 允许任何 IP 访问
+    description     = "Allow Flink UI access ONLY via Bastion/Runner"
+    from_port       = 8081
+    to_port         = 8081
+    protocol        = "tcp"
+    security_groups = [data.aws_security_group.runner_sg.id] # 只允许 Runner 访问
   }
 }
 

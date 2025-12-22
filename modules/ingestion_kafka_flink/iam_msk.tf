@@ -168,9 +168,10 @@ resource "aws_security_group_rule" "ecs_to_msk_ingress" {
   type                     = "ingress"
   security_group_id        = aws_security_group.msk_sg.id
   source_security_group_id = aws_security_group.ecs_tasks_sg.id
-  from_port = 9098 #SASL/SCRAM 常用 9096 (内部)；TLS 用 9094；IAM 用 9098
-  to_port   = 9098
-  protocol  = "tcp"
+  from_port                = 9098 #SASL/SCRAM 常用 9096 (内部)；TLS 用 9094；IAM 用 9098
+  to_port                  = 9098
+  protocol                 = "tcp"
+  description              = "Allow Flink ECS Task to connect to MSK Broker (IAM Auth)"
 }
 
 # kms CMK for data encryption, AES 256 for MSK、S3、EBS、RDS

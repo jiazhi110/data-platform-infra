@@ -185,3 +185,37 @@ resource "aws_glue_crawler" "etl_crawler" {
   # 也可以给 Crawler 加个定时，比如 Job 跑完后 1 小时跑一次
   schedule = var.crawler_schedule
 }
+
+# ------------------------------------------------------------------------------
+# 6. AWS Glue Data Quality (数据质量治理)
+# ------------------------------------------------------------------------------
+resource "aws_glue_data_quality_ruleset" "data_quality_check" {
+  name        = "${var.project_name}-${var.environment}-dq-rules"
+  description = "Validate data quality for the batch output table"
+
+  # 绑定目标：指定之前创建的 Catalog 数据库和表
+  target_table {
+    database_name = aws_glue_catalog_database.etl_database.name
+    table_name    = "batch_output" # 默认由 Crawler 根据 S3 路径最后一级目录名生成
+  }
+
+  # 规则集：使用 DQDL (Data Quality Definition Language) 语法定义
+  # 基于 product_area_city_ratio_percent 的真实 Schema 进行校验
+  ruleset = <<EOF
+    Rules = [
+        # 验证 1: 数据量检查 - 确保表里至少有一行数据，防止 ETL 逻辑异常导致产出空文件
+        RowCount > 0,
+
+        # 验证 2: 完整性检查 - 核心维度字段不能为空
+        IsComplete "area_name",
+        IsComplete "produce_name",
+
+        # 验证 3: 业务逻辑检查 - 总点击数必须是正数
+        ColumnValues "total_clicks" > 0
+    ]
+EOF
+
+  tags = {
+    Name = "${var.project_name}-dq-rules"
+  }
+}
