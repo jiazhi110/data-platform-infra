@@ -48,9 +48,9 @@ data "aws_iam_policy_document" "mock_data_task_policy" {
     ]
     resources = [
       # 授权操作所有 Topic
-      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:topic/${var.msk_cluster_name}/*",
+      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:topic/${var.project_name}-${var.environment}-msk-cluster/*",
       # 授权操作所有 Transactional ID 事物
-      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:transactional-id/${var.msk_cluster_name}/*"
+      "arn:aws:kafka:${var.aws_region}:${data.aws_caller_identity.me.account_id}:transactional-id/${var.project_name}-${var.environment}-msk-cluster/*"
     ]
   }
 

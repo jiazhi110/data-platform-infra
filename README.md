@@ -1,112 +1,73 @@
-# Data Platform Infrastructure
+# Data Platform Infrastructure on AWS
 
-IaC for ingestion_kafka_flink and Top-produce-ETL.
+A production-grade, end-to-end data platform implementing **Lambda Architecture** concepts using **Terraform (IaC)**. This platform handles real-time ingestion via Kafka/Flink and batch processing via AWS Glue, delivering insights through Athena and QuickSight.
 
-## Project Structure
+![Architecture Diagram](https://via.placeholder.com/800x400.png?text=Architecture+Diagram:+Mock+->+MSK+->+Flink+->+S3+->+Glue+->+Athena)
+*(Note: Use draw.io to generate and commit the actual architecture diagram)*
+
+## 🚀 Key Features & Highlights
+
+### 1. Real-Time Ingestion Layer
+*   **AWS MSK (Managed Kafka)**: Serves as the streaming backbone. Configured with **IAM Authentication** for zero-secret management and **MinISR=1** for high availability during maintenance.
+*   **Apache Flink on ECS Fargate**: Deployed in **Application Mode**. Handles real-time processing with **RocksDB State Backend** and **S3 Checkpointing** for exactly-once semantics.
+
+### 2. Batch Processing & Data Governance
+*   **AWS Glue**: Serverless Spark jobs for complex ETL (e.g., Area-based Top 3 Product Ranking).
+*   **Data Quality (DQDL)**: Integrated **AWS Glue Data Quality** to validate business logic (e.g., `total_clicks > 0`) before data consumption.
+*   **Catalog Sync**: Automatic schema discovery via Glue Crawlers, enabling metadata-driven analysis in Athena.
+
+### 3. Security & Zero-Trust Access
+*   **Isolated Infrastructure**: All compute resources (MSK, Flink, Glue) reside in VPC **Private Subnets**.
+*   **Secured Management**: Flink UI is shielded from the public internet. Access is restricted ONLY to the **GitHub Self-hosted Runner** (Security Group Level), enabling secure debugging via SSH/SSM tunneling.
+*   **Hardened Storage**: Every S3 bucket enforces **AES-256 Encryption** and **Public Access Block**.
+
+### 4. Operational Excellence (FinOps & DevOps)
+*   **Cost Optimized**: Single NAT Gateway for Dev environments; **S3 Lifecycle Rules** to auto-expire Flink Checkpoints (3d) and Savepoints (7d).
+*   **Observability**: Real-time alerting via **SNS + CloudWatch** for ETL failures and Task interruptions. Centralized logging in **CloudWatch Logs**.
+
+## 🛠️ Prerequisites & Getting Started
+
+### Prerequisites
+*   **Terraform** ~> 1.5
+*   **AWS CLI** configured with appropriate credentials
+*   **Docker** for building Flink/Producer images
+
+### Deployment Steps
+1.  **Network Layer**: Establish the VPC foundation.
+    ```bash
+    cd environments/network
+    terraform init && terraform apply
+    ```
+2.  **Application Layer**: Deploy Kafka, Flink, and Glue.
+    ```bash
+    cd ../dev
+    terraform init && terraform apply
+    ```
+
+## 🤖 CI/CD & Automation
+This project leverages **GitHub Actions** for automated infrastructure management:
+*   **Validation**: Automated `terraform validate` and `terraform fmt` checks.
+*   **GitOps Deployment**: Changes are applied via a **Self-hosted Runner** within the VPC, ensuring secure deployment and credential isolation.
+
+## 🛠️ Post-Deployment Operations
+*   **Platform Dashboard**: Run `terraform output` to retrieve **MSK Bootstrap brokers**, S3 bucket names, and Glue job identifiers.
+*   **Access UI**: Use SSH Tunneling via the Runner EC2 to access Flink UI on `localhost:8081`.
+*   **Log Exploration**: Use **CloudWatch Logs Insights** to debug Flink tasks and Glue Spark jobs.
+
+## 📂 Repository Structure
 
 ```
-├── README.md
-├── providers.tf
-│
+.
 ├── environments/
-│   ├── dev/
-│   │   ├── backend.tf           # dev 环境的 state 文件配置
-│   │   ├── locals.tf            # dev 环境的本地变量
-│   │   ├── main.tf              # 编排 dev 环境所有模块
-│   │   ├── outputs.tf           # 输出 dev 环境的重要信息
-│   │   └── terraform.tfvars     # dev 环境的专属配置
-│   │
-│   └── prod/
-│       ├── backend.tf           # prod 环境的 state 文件配置
-│       ├── main.tf              # 编排 prod 环境所有模块
-│       ├── outputs.tf
-│       └── terraform.tfvars     # prod 环境的专属配置
-│
+│   ├── dev/                 # Entry point: Minimalist config, core business params only
+│   └── network/             # Core Network Layer (Independent State)
 └── modules/
-    ├── networking/              # 模块1: 共享网络
-    │   ├── data.tf
-    │   ├── locals.tf
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    │
-    ├── ingestion_kafka_flink/   # 模块2: 实时摄取应用
-    │   ├── main.tf              # 定义 MSK, Flink App, S3, IAM 等资源
-    │   ├── variables.tf
-    │   └── outputs.tf
-    │
-    └── top_produce_etl/         # 模块3: 批量ETL应用
-        ├── main.tf              # 定义 Glue Job, Step Function, S3, IAM 等资源
-        ├── variables.tf
-        └── outputs.tf
+    ├── ingestion_kafka_flink/ # Streaming Layer (MSK, Flink, IAM, S3)
+    ├── top_produce_etl/       # Batch Layer (Glue, Catalog, Athena, Data Quality)
+    └── monitoring/            # Observability Layer (Shared SNS Alerts)
 ```
 
-## Prerequisites
-
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- AWS CLI configured with appropriate credentials
-
-## Getting Started
-
-1. Clone this repository
-2. Install Terraform
-3. Configure your AWS credentials:
-   ```bash
-   aws configure
-   ```
-4. Initialize Terraform:
-   ```bash
-   terraform init
-   ```
-5. Select your workspace (environment):
-   ```bash
-   terraform workspace select dev
-   ```
-6. Plan the infrastructure:
-   ```bash
-   terraform plan
-   ```
-7. Apply the infrastructure:
-   ```bash
-   terraform apply
-   ```
-
-## Environments
-
-- **dev**: Development environment
-- **prod**: Production environment
-
-Note: The staging environment has been removed from the current implementation.
-
-## Modules
-
-This project uses the following modules:
-
-- **networking**: Creates VPC with public and private subnets, Internet Gateway, and Route Tables
-- **ingestion_kafka_flink**: Creates resources for real-time data ingestion including MSK, Flink applications, S3 buckets, and IAM roles
-- **top_produce_etl**: Creates resources for batch ETL processing including Glue Jobs, Step Functions, S3 buckets, and IAM roles
-
-## Variables
-
-Each environment has its own `terraform.tfvars` file with environment-specific configurations.
-
-## Outputs
-
-Each module has its own `outputs.tf` file that exposes important resource attributes.
-
-## Best Practices
-
-1. Always use variables for configurable values
-2. Use outputs to expose important resource attributes
-3. Organize resources into modules for reusability
-4. Use separate tfvars files for each environment
-5. Use terraform fmt to format code consistently
-6. Use terraform validate to check syntax
-7. Use terraform plan before applying changes
-
-## Contributing
-
-1. Create a new branch for your changes
-2. Make your changes
-3. Run terraform fmt and terraform validate
-4. Submit a pull request
+## 📈 Future Roadmap
+*   **Real-time Serving**: Implement **Amazon ElastiCache (Redis)** for sub-second latency on dashboard metrics.
+*   **Schema Evolution**: Integrate **Glue Schema Registry** for strict Avro/Protobuf validation.
+*   **Enhanced Testing**: Integrate **Terratest** and native **Terraform Test** framework for module validation.

@@ -20,7 +20,7 @@ resource "aws_ecs_cluster" "main_cluster" {
 }
 
 resource "aws_ecs_task_definition" "producer_task" {
-  family = var.flink_task_family
+  family = "${var.project_name}-${var.environment}-flink-family"
   #对 Fargate 来说 必须，因为 Fargate 不允许使用 bridge 或 host 模式
   # 对 EC2 launch type 可以用其他模式，但 Fargate 只能 awsvpc
   network_mode             = "awsvpc"
@@ -363,7 +363,7 @@ resource "null_resource" "stop_producer_service" {
 
 # CloudWatch 日志组 - 更新名称以适配 Flink
 resource "aws_cloudwatch_log_group" "flink_logs" {
-  name              = "/ecs/${var.flink_task_family}"
+  name              = "/ecs/${var.project_name}-${var.environment}-flink-family"
   retention_in_days = 14
 }
 

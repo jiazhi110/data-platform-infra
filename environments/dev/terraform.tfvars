@@ -9,56 +9,13 @@ project_name = "data-platform"
 # Environment name
 environment = "dev"
 
-#   首先，您需要从 IANA (互联网号码分配局) 指定的三个私有 IPv4 地址块中选择一个。您不能随便编一个地址。
-
-#    * A 类: 10.0.0.0 to 10.255.255.255 (CIDR: 10.0.0.0/8)
-#        * 特点：地址空间最大，非常灵活。
-#        * 最常用：这是绝大多数公司和云项目的首选。因为它足够大，可以轻松地为不同的部门、环境、区域划分出完全不冲突的子范围。
-
-#    * B 类: 172.16.0.0 to 172.31.255.255 (CIDR: 172.16.0.0/12)
-#        * 特点：大小适中。
-#        * 常用度：也比较常用。AWS 的默认 VPC 就喜欢用这个范围内的地址（比如 172.31.0.0/16）。
-
-#    * C 类: 192.168.0.0 to 192.168.255.255 (CIDR: 192.168.0.0/16)
-#        * 特点：地址空间最小。
-#        * 常用度：在企业级项目中较少作为 VPC 的主 CIDR，因为它太小了。这个地址段更常见于家庭路由器、小型办公室网络或 Docker 容器网络。
-
-# Refactor: Commenting out network-related variable assignments as they are now managed by the network layer.
-# vpc_cidr = "10.10.0.0/16"
-# public_subnets_cidr = ["10.10.1.0/24", "10.10.2.0/24", "10.10.3.0/24"]
-# private_subnets_cidr = ["10.10.11.0/24", "10.10.12.0/24", "10.10.13.0/24"]
-# az_count = 3
-
 # --- ingestion 模块变量赋值 ---
 kafka_broker_instance_type = "kafka.t3.small"
 
 kafka_version = "3.8.x"
 
-# EC2 Instance Type for development
-# ec2_instance_type = "t3.medium"
-
-# ECS Cluster Name for development
-# ecs_cluster_name_suffix = "ecs-dev-cluster"
-
-# MSK Cluster Name for development
-msk_cluster_name_suffix = "msk-dev-cluster"
-
-# MSK security group Name for development
-msk_sg_name_suffix = "msk-dev-sg"
-
-# MSK security scram credentials Name for development
-# msk_scram_name_suffix = "msk-scram-credentials"
-
-# MSK security scram credentials Name for development
-# msk_scram_name_prefix = "AmazonMSK"
-
-# ECR task definition Name for development
-flink_task_family_suffix = "family"
-
-# ECR task cpu for development 512:.5cpu
 flink_task_cpu = "512"
 
-# ECR task memory for development 4096:4GB
 flink_task_memory = "4096"
 
 # Glue Database Name for development

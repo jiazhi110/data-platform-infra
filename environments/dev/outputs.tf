@@ -17,3 +17,23 @@ output "ecs_tasks_sg_id" {
   description = "ecs task 的 sg id"
   value       = module.ingestion.ecs_tasks_sg_id
 }
+
+output "msk_bootstrap_brokers" {
+  description = "MSK SASL/IAM Connection String"
+  value       = module.ingestion.msk_bootstrap_brokers_sasl_iam
+}
+
+output "flink_output_bucket" {
+  description = "S3 Data Lake Bucket"
+  value       = module.ingestion.flink_output_bucket
+}
+
+output "glue_job_name" {
+  description = "ETL Glue Job Name"
+  value       = module.top_produce_etl.glue_job_name
+}
+
+output "athena_database" {
+  description = "Athena/Glue Catalog Database"
+  value       = module.top_produce_etl.athena_database_name
+}

@@ -11,3 +11,8 @@ output "glue_job_role_arn" {
   description = "The ARN of the IAM role created for the Glue job."
   value       = aws_iam_role.glue_job_role.arn
 }
+
+output "athena_database_name" {
+  description = "The Glue Data Catalog database name"
+  value       = aws_glue_catalog_database.etl_database.name
+}

@@ -1,7 +1,7 @@
 # --- MSK Kafka 集群 ---
 # 创建核心的 Kafka 集群。
 resource "aws_msk_cluster" "kafka_cluster" {
-  cluster_name           = var.msk_cluster_name
+  cluster_name           = "${var.project_name}-${var.environment}-msk-cluster"
   kafka_version          = var.kafka_version
   number_of_broker_nodes = length(var.private_subnet_ids) # 每个子网一个 broker，实现高可用,一个 Broker 对应一台 EC2 实例。
 
@@ -84,13 +84,13 @@ resource "aws_msk_cluster" "kafka_cluster" {
   }
 
   tags = {
-    Name = var.msk_cluster_name
+    Name = "${var.project_name}-${var.environment}-msk-cluster"
   }
 }
 
 # --- MSK Kafka cloudwatch ---
 resource "aws_cloudwatch_log_group" "msk" {
-  name              = "/aws/msk/${var.msk_cluster_name}"
+  name              = "/aws/msk/${var.project_name}-${var.environment}-msk-cluster"
   retention_in_days = 14
 }
 
@@ -136,7 +136,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "msk_logs_encrypti
 
 # 为 MSK Kafka 集群创建一个安全组，用于控制网络访问。
 resource "aws_security_group" "msk_sg" {
-  name        = var.msk_sg_name
+  name        = "${var.project_name}-${var.environment}-msk-sg"
   description = "Allow traffic to MSK brokers"
   vpc_id      = var.vpc_id
 
@@ -158,7 +158,7 @@ resource "aws_security_group" "msk_sg" {
   # }
 
   tags = {
-    Name = var.msk_sg_name
+    Name = "${var.project_name}-${var.environment}-msk-sg"
   }
 }
 

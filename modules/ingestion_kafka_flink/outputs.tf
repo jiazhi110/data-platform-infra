@@ -11,6 +11,11 @@ output "kafka_bootstrap_brokers_plaintext" {
   value     = aws_msk_cluster.kafka_cluster.bootstrap_brokers
 }
 
+output "msk_bootstrap_brokers_sasl_iam" {
+  description = "Kafka 集群的 SASL/IAM 连接地址 (生产/开发推荐)。"
+  value       = aws_msk_cluster.kafka_cluster.bootstrap_brokers_sasl_iam
+}
+
 output "ecs_tasks_sg_id" {
   description = "ecs task 的 sg id"
   value = aws_security_group.ecs_tasks_sg.id
@@ -35,4 +40,3 @@ output "flink_output_bucket" {
   description = "The name of the S3 bucket used for Flink output and scripts."
   value       = aws_s3_bucket.flink_output_bucket.bucket
 }
-
