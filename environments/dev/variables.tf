@@ -58,6 +58,7 @@ variable "flink_task_memory" {
 variable "mock_data_image" {
   description = "Docker image URI for the mock data generator"
   type        = string
+  default     = "ubuntu:latest" # Placeholder 占位符,不然action不动弹，必须要输入.
 }
 
 variable "mock_data_schedule" {
