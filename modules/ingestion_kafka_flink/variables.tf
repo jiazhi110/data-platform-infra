@@ -58,12 +58,6 @@ variable "kafka_version" {
   type        = string
 }
 
-variable "msk_logs_bucket_prefix" {
-  # MSK 日志 S3 桶的前缀。
-  description = "S3 bucket prefix for MSK broker logs"
-  type        = string
-}
-
 # --- Flink ---
 variable "flink_output_bucket" {
   description = "The S3 bucket for Flink output data"
