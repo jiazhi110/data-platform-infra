@@ -26,28 +26,29 @@ variable "environment" {
 # Ingestion Module Variables (Kafka & Flink)
 # ------------------------------------------------------------------------------
 variable "kafka_broker_instance_type" {
-  description = "dev 环境中 MSK Broker 的实例类型。"
+  # dev 环境中 MSK Broker 的实例类型。
+  description = "The EC2 instance type for MSK broker nodes in development"
   type        = string
 }
 
 variable "kafka_version" {
-  description = "Apache Kafka 的版本。"
+  description = "Apache Kafka version for the cluster"
   type        = string
   default     = "3.8.x"
 }
 
 variable "flink_output_bucket" {
-  description = "ingestion-flink-output-s3"
+  description = "Name of the S3 bucket for Flink output and state"
   type        = string
 }
 
 variable "flink_task_cpu" {
-  description = "flink_task_cpu"
+  description = "CPU units for the Flink ECS task"
   type        = string
 }
 
 variable "flink_task_memory" {
-  description = "flink_task_memory"
+  description = "Memory (MiB) for the Flink ECS task"
   type        = string
 }
 
@@ -55,24 +56,23 @@ variable "flink_task_memory" {
 # Mock Data Generation Variables
 # ------------------------------------------------------------------------------
 variable "mock_data_image" {
-  description = "Docker image for the mock data generator task."
+  description = "Docker image URI for the mock data generator"
   type        = string
-  default     = "ubuntu:latest" # Placeholder
 }
 
 variable "mock_data_schedule" {
-  description = "The schedule for the mock data generator."
+  description = "Schedule for the mock data task (Cron expression)"
   type        = string
   default     = null
 }
 
 variable "runner_security_group_name" {
-  description = "The name of the security group for the self-hosted runner."
+  description = "Name of the security group for the self-hosted runner"
   type        = string
 }
 
 variable "runner_iam_role_name" {
-  description = "The name of the IAM role for the EC2 runner instance."
+  description = "Name of the IAM role for the EC2 runner instance"
   type        = string
 }
 
@@ -80,12 +80,12 @@ variable "runner_iam_role_name" {
 # ETL Module Variables (Glue)
 # ------------------------------------------------------------------------------
 variable "glue_trigger_schedule" {
-  description = "The cron schedule for the Glue job trigger."
+  description = "Schedule for the Glue ETL job (Cron expression)"
   type        = string
 }
 
 variable "crawler_schedule" {
-  description = "The cron schedule for the Glue crawler."
+  description = "Schedule for the Glue crawler (Cron expression)"
   type        = string
 }
 
@@ -93,6 +93,6 @@ variable "crawler_schedule" {
 # Monitoring & Alerting
 # ------------------------------------------------------------------------------
 variable "alert_email" {
-  description = "Email address for receiving alerts"
+  description = "Email address for receiving system alerts"
   type        = string
 }

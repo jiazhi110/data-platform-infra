@@ -23,7 +23,7 @@ resource "aws_s3_bucket_public_access_block" "etl_assets_block" {
 }
 
 # ------------------------------------------------------------------------------
-# AWS Glue Job
+# 2. AWS Glue Job
 # This is the core resource of the ETL module. It defines the ETL job that
 # will be executed by AWS Glue.
 # ------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ resource "aws_glue_job" "top_produce_etl_job" {
 }
 
 # ------------------------------------------------------------------------------
-# AWS Glue Trigger
+# 3. AWS Glue Trigger
 # ------------------------------------------------------------------------------
 
 # Defines a trigger to run the Glue job on a schedule.
@@ -129,7 +129,7 @@ resource "aws_glue_trigger" "etl_trigger" {
   }
 }
 
-# 定义 Glue 数据库 (逻辑容器)
+# 4. 定义 Glue 数据库 (逻辑容器)
 resource "aws_glue_catalog_database" "etl_database" {
   name = "${var.project_name}-${var.environment}-db" # e.g., data-platform-dev-db
 }
@@ -187,6 +187,42 @@ resource "aws_glue_crawler" "etl_crawler" {
 }
 
 # ------------------------------------------------------------------------------
+# 5.1 AWS Glue Catalog Table (Bootstrap Table)
+# ------------------------------------------------------------------------------
+# 预先定义表结构，解决 Data Quality Ruleset 的 "Entity Not Found" 依赖问题。
+# 我们只定义核心字段，其余字段由 Crawler 在运行时自动发现和更新。
+resource "aws_glue_catalog_table" "batch_output_table" {
+  name          = "batch_output"
+  database_name = aws_glue_catalog_database.etl_database.name
+  table_type    = "EXTERNAL_TABLE" // 外部表：数据存储在外部（如 S3），删除表不影响数据。数据湖查询、Crawler 发现的表、ETL 输出。Glue 默认类型，最常用。
+
+  storage_descriptor {
+    location      = "s3://${var.destination_s3_bucket_name}/batch_output/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+
+    // 提供序列化/反序列化（Serializer/Deserializer，简称SerDe）的信息。
+    ser_de_info {
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+      parameters = {
+        "serialization.format" = "1" // 指定序列化格式的版本或行为，通常表示使用版本1的Hive序列化协议（对应于特定的行格式）。这确保兼容旧版Hive工具，避免类型转换问题。
+      }
+    }
+
+    # 引导字段：只写一个，其余的交给 Crawler 自动合并
+    columns {
+      name    = "area_name"
+      type    = "string"
+      comment = "Bootstrap column - others discovered by crawler"
+    }
+  }
+
+  parameters = {
+    "classification" = "parquet"
+  }
+}
+
+# ------------------------------------------------------------------------------
 # 6. AWS Glue Data Quality (数据质量治理)
 # ------------------------------------------------------------------------------
 resource "aws_glue_data_quality_ruleset" "data_quality_check" {
@@ -196,7 +232,7 @@ resource "aws_glue_data_quality_ruleset" "data_quality_check" {
   # 绑定目标：指定之前创建的 Catalog 数据库和表
   target_table {
     database_name = aws_glue_catalog_database.etl_database.name
-    table_name    = "batch_output" # 默认由 Crawler 根据 S3 路径最后一级目录名生成
+    table_name    = aws_glue_catalog_table.batch_output_table.name # 显式引用
   }
 
   # 规则集：使用 DQDL (Data Quality Definition Language) 语法定义
