@@ -38,20 +38,20 @@ module "ingestion" {
   # --- Module Specific Inputs ---
   kafka_broker_instance_type = var.kafka_broker_instance_type
   kafka_version              = var.kafka_version
-  
-  flink_task_cpu             = var.flink_task_cpu
-  flink_task_memory          = var.flink_task_memory
-  flink_image_url            = data.aws_ssm_parameter.flink_image_url.value
-  flink_output_bucket        = var.flink_output_bucket
-  
-  mockdata_image_url         = data.aws_ssm_parameter.mockdata_image_url.value
-  mock_data_schedule         = var.mock_data_schedule
-  
+
+  flink_task_cpu      = var.flink_task_cpu
+  flink_task_memory   = var.flink_task_memory
+  flink_image_url     = data.aws_ssm_parameter.flink_image_url.value
+  flink_output_bucket = var.flink_output_bucket
+
+  mockdata_image_url = data.aws_ssm_parameter.mockdata_image_url.value
+  mock_data_schedule = var.mock_data_schedule
+
   runner_security_group_name = var.runner_security_group_name
   runner_iam_role_name       = var.runner_iam_role_name
-  
+
   # --- Alerting ---
-  sns_alert_topic_arn        = module.monitoring.sns_topic_arn
+  sns_alert_topic_arn = module.monitoring.sns_topic_arn
 }
 
 # --- ETL Module (Glue) ---
@@ -69,7 +69,7 @@ module "top_produce_etl" {
 
   glue_trigger_schedule = var.glue_trigger_schedule
   crawler_schedule      = var.crawler_schedule
-  
+
   # --- Alerting ---
-  sns_alert_topic_arn   = module.monitoring.sns_topic_arn
+  sns_alert_topic_arn = module.monitoring.sns_topic_arn
 }
