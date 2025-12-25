@@ -76,8 +76,15 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Parameters = {
           JobName = aws_glue_job.top_produce_etl_job.name
         }
+        # 自动重试策略 (Resilience)
+        Retry = [{
+          ErrorEquals     = ["Glue.AWSGlueException", "States.TaskFailed"],
+          IntervalSeconds = 60,  # 失败后等待 60 秒
+          MaxAttempts     = 3,   # 最多重试 3 次
+          BackoffRate     = 2.0  # 每次等待时间翻倍
+        }]
         Next = "RunCrawler"
-        # 错误捕获：如果 Glue 失败，直接跳到报警步骤
+        # 错误捕获：如果重试后依然失败，直接跳到报警步骤
         Catch = [{
           ErrorEquals = ["States.ALL"]
           Next        = "NotifyFailure"
@@ -116,5 +123,51 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         End = true
       }
     }
+  })
+}
+
+# 3. 定时调度 (EventBridge Scheduler)
+# 替代原本分散在 Glue Trigger 里的定时逻辑，统一由 EventBridge 触发 SFN
+resource "aws_cloudwatch_event_rule" "etl_schedule" {
+  name                = "${var.project_name}-${var.environment}-etl-schedule"
+  description         = "Trigger ETL Step Functions Pipeline daily"
+  schedule_expression = var.glue_trigger_schedule
+  state               = "ENABLED"
+}
+
+resource "aws_cloudwatch_event_target" "trigger_sfn" {
+  rule      = aws_cloudwatch_event_rule.etl_schedule.name
+  target_id = "TriggerSFN"
+  arn       = aws_sfn_state_machine.etl_pipeline.arn
+  role_arn  = aws_iam_role.eventbridge_sfn_role.arn
+}
+
+# 专门给 EventBridge 用来触发 SFN 的 IAM Role
+resource "aws_iam_role" "eventbridge_sfn_role" {
+  name = "${var.project_name}-${var.environment}-eb-sfn-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "events.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "eb_sfn_policy" {
+  name = "eb-sfn-policy"
+  role = aws_iam_role.eventbridge_sfn_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = ["states:StartExecution"]
+      Resource = aws_sfn_state_machine.etl_pipeline.arn
+    }]
   })
 }
