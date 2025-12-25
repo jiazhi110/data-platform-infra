@@ -107,29 +107,29 @@ resource "aws_glue_job" "top_produce_etl_job" {
 }
 
 # ------------------------------------------------------------------------------
-# 3. AWS Glue Trigger
+# AWS Glue Trigger (已废弃 - 改用 Step Functions 编排)
 # ------------------------------------------------------------------------------
 
 # Defines a trigger to run the Glue job on a schedule.
-resource "aws_glue_trigger" "etl_trigger" {
-  # Only create this trigger if a schedule is provided.
-  count = var.glue_trigger_schedule != null ? 1 : 0
+# resource "aws_glue_trigger" "etl_trigger" {
+#   # Only create this trigger if a schedule is provided.
+#   count = var.glue_trigger_schedule != null ? 1 : 0
+# 
+#   name          = "${var.project_name}-${var.environment}-etl-trigger"
+#   type          = "SCHEDULED"
+#   schedule      = var.glue_trigger_schedule
+#   enabled       = true
+# 
+#   actions {
+#     job_name = aws_glue_job.top_produce_etl_job.name
+#   }
+# 
+#   tags = {
+#     Name        = "${var.project_name}-${var.environment}-etl-trigger"
+#   }
+# }
 
-  name          = "${var.project_name}-${var.environment}-etl-trigger"
-  type          = "SCHEDULED"
-  schedule      = var.glue_trigger_schedule
-  enabled       = true
-
-  actions {
-    job_name = aws_glue_job.top_produce_etl_job.name
-  }
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-etl-trigger"
-  }
-}
-
-# 4. 定义 Glue 数据库 (逻辑容器)
+# 定义 Glue 数据库 (逻辑容器)
 resource "aws_glue_catalog_database" "etl_database" {
   name = "${var.project_name}-${var.environment}-db" # e.g., data-platform-dev-db
 }
@@ -182,8 +182,8 @@ resource "aws_glue_crawler" "etl_crawler" {
     }
   })
   
-  # 也可以给 Crawler 加个定时，比如 Job 跑完后 1 小时跑一次
-  schedule = var.crawler_schedule
+  # 已废弃 - 改由 Step Functions 触发
+  # schedule = var.crawler_schedule
 }
 
 # ------------------------------------------------------------------------------
