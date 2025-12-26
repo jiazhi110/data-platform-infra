@@ -22,11 +22,42 @@ resource "aws_s3_bucket_public_access_block" "etl_assets_block" {
   restrict_public_buckets = true
 }
 
+# --- ETL Assets 桶生命周期管理 ---
+# 自动清理临时文件和日志，防止存储费用无限增长
+resource "aws_s3_bucket_lifecycle_configuration" "etl_assets_lifecycle" {
+  bucket = aws_s3_bucket.etl_assets.id
+
+  # 规则 1: 清理 Glue 临时目录
+  rule {
+    id     = "expire-temporary-files"
+    status = "Enabled"
+
+    filter {
+      prefix = "temporary/"
+    }
+
+    expiration {
+      days = 7 # 临时文件只留 7 天
+    }
+  }
+
+  # 规则 2: 清理 Spark UI 日志
+  rule {
+    id     = "expire-spark-logs"
+    status = "Enabled"
+
+    filter {
+      prefix = "spark-logs/"
+    }
+
+    expiration {
+      days = 30 # 日志留 30 天足够排查历史问题
+    }
+  }
+}
+
 # ------------------------------------------------------------------------------
-# 2. AWS Glue Job
-# This is the core resource of the ETL module. It defines the ETL job that
-# will be executed by AWS Glue.
-# ------------------------------------------------------------------------------
+# AWS Glue Job
 
 resource "aws_glue_job" "top_produce_etl_job" {
   name     = "${var.project_name}-${var.environment}-top-produce-etl"
@@ -87,6 +118,11 @@ resource "aws_glue_job" "top_produce_etl_job" {
     
     # 临时目录。Glue 运行时需要暂存一些中间文件，最好显式指定，方便清理。
     "--TempDir"                          = "s3://${aws_s3_bucket.etl_assets.bucket}/temporary/"
+
+    # --- 开启 Job Bookmarks (作业书签) ---
+    # 核心功能：让 Glue 记录已处理的文件，下次运行时只处理增量数据。
+    # 价值：避免全量扫描，大幅降低计算成本并处理迟到数据。
+    "--job-bookmark-option"              = "job-bookmark-enable"
 
     # --- 2. 用户自定义参数 (User Arguments) ---
     # 这些参数会原封不动地传给你的 sys.argv，你的 Python 脚本需要解析它们。

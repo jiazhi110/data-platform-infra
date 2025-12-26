@@ -127,6 +127,20 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "msk_logs_encrypti
   }
 }
 
+# [新增] MSK 日志桶生命周期管理
+resource "aws_s3_bucket_lifecycle_configuration" "msk_logs_lifecycle" {
+  bucket = aws_s3_bucket.msk_logs_bucket.id
+
+  rule {
+    id     = "expire-old-logs"
+    status = "Enabled"
+
+    expiration {
+      days = 90 # 保留 90 天日志，兼顾审计需求与成本
+    }
+  }
+}
+
 # [备忘] MSK 服务关联角色
 # 仅在新账号且从未手动创建过 Kafka 集群时需要启用。
 # 否则会报错 "Role already exists"。
