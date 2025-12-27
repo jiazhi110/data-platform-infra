@@ -18,53 +18,55 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-# 在etl_assets s3 中 declared了。
-# variable "glue_script_location" {
-#   description = "The S3 path to the Glue ETL script (e.g., 's3://your-bucket/scripts/etl.py')."
-#   type        = string
-# }
-
 variable "glue_version" {
+  # 使用的 AWS Glue 版本。
   description = "The version of AWS Glue to use."
   type        = string
-  default     = "4.0" # "4.0" is a good default, supporting Spark 3.3 and Python 3.10
+  default     = "4.0" 
 }
 
 variable "worker_type" {
+  # Glue 任务分配的 Worker 类型（如 G.1X, G.2X）。
   description = "The type of workers that are allocated when a job runs."
   type        = string
-  default     = "G.1X" # A standard worker type
+  default     = "G.1X" 
 }
 
 variable "number_of_workers" {
+  # 任务运行时的最大 Worker 数量（配合 Auto-scaling 使用）。
   description = "The number of workers of a defined workerType that are allocated when a job runs."
   type        = number
-    default     = 10 # A reasonable default for a small to medium job
-  }
+  default     = 10 
+}
   
 variable "source_s3_bucket_name" {
+  # 数据来源 S3 桶名称。
   description = "The name of the S3 bucket where the source data is located."
   type        = string
 }
 
 variable "destination_s3_bucket_name" {
+  # 清洗后的数据存储 S3 桶名称。
   description = "The name of the S3 bucket where the transformed data will be written."
   type        = string
 }
   
 variable "glue_trigger_schedule" {
-  description = "The cron expression for scheduling the Glue job (e.g., 'cron(0 12 * * ? *)'). If null, the trigger is disabled."
+  # 调度任务的 Cron 表达式。
+  description = "The cron expression for scheduling the workflow (e.g., 'cron(0 12 * * ? *)')."
   type        = string
   default     = null
 }
 
 variable "crawler_schedule" {
-  description = "The cron expression for scheduling the Glue Crawler (e.g., 'cron(0 3 * * ? *)'). If null, the crawler is not scheduled."
+  # 已废弃：Crawler 调度现由 Step Functions 管理。
+  description = "The cron expression for scheduling the Glue Crawler (Deprecated)."
   type        = string
   default     = null
 }
 
 variable "sns_alert_topic_arn" {
+  # 用于发送 ETL 失败通知的 SNS Topic ARN。
   description = "The ARN of the SNS topic to send alerts to."
   type        = string
 }

@@ -60,32 +60,38 @@ variable "kafka_version" {
 
 # --- Flink ---
 variable "flink_output_bucket" {
-  description = "The S3 bucket for Flink output data"
+  # Flink 任务的输出 S3 桶，用于存储处理后的数据、Checkpoints 和 Savepoints。
+  description = "The S3 bucket for Flink output data and state"
   type        = string
 }
 
 variable "flink_task_cpu" {
+  # Flink ECS 任务使用的 CPU 单元。
   description = "CPU units for the Flink ECS task"
   type        = string
 }
 
 variable "flink_task_memory" {
+  # Flink ECS 任务使用的内存 (MiB)。
   description = "Memory (MiB) for the Flink ECS task"
   type        = string
 }
 
 variable "flink_image_url" {
+  # Flink Docker 镜像的 ECR URL。
   description = "The URL of the Flink Docker image"
   type        = string
 }
 
 # --- Mock Data ---
 variable "mockdata_image_url" {
+  # Mock 数据生成器的 Docker 镜像 URL。
   description = "The URL of the mock data generator Docker image"
   type        = string
 }
 
 variable "mock_data_schedule" {
+  # Mock 数据生成的定时表达式 (Cron)。
   description = "Cron expression for the mock data generation schedule"
   type        = string
   default     = null
@@ -99,6 +105,7 @@ variable "runner_iam_role_name" {
 
 # --- Alerting ---
 variable "sns_alert_topic_arn" {
+  # 用于发送系统报警的 SNS Topic ARN。
   description = "The ARN of the SNS topic to send alerts to"
   type        = string
 }

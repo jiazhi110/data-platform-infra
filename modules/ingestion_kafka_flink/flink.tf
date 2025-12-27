@@ -559,6 +559,17 @@ resource "aws_s3_bucket" "flink_output_bucket" {
 resource "aws_s3_bucket_lifecycle_configuration" "flink_output_lifecycle" {
   bucket = aws_s3_bucket.flink_output_bucket.id
 
+  # 规则 0: 清理旧版本 (Cost Optimization)
+  rule {
+    id     = "cleanup-old-versions"
+    status = "Enabled"
+
+    # 如果文件被覆盖/删除，其历史版本保留 30 天后彻底清除
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+
   # 规则 1: 自动清理过期的 Checkpoints (Flink 自动生成)
   rule {
     id     = "expire-checkpoints"

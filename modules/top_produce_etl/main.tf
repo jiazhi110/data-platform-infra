@@ -12,6 +12,15 @@ resource "aws_s3_bucket" "etl_assets" {
   }
 }
 
+# --- 启用桶版本控制 (Versioning) ---
+# 价值：代码和依赖包的版本回滚能力
+resource "aws_s3_bucket_versioning" "etl_assets_versioning" {
+  bucket = aws_s3_bucket.etl_assets.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 # 安全最佳实践：阻止对 S3 的公网访问
 resource "aws_s3_bucket_public_access_block" "etl_assets_block" {
   bucket = aws_s3_bucket.etl_assets.id
@@ -27,7 +36,18 @@ resource "aws_s3_bucket_public_access_block" "etl_assets_block" {
 resource "aws_s3_bucket_lifecycle_configuration" "etl_assets_lifecycle" {
   bucket = aws_s3_bucket.etl_assets.id
 
-  # 规则 1: 清理 Glue 临时目录
+  # 规则 1: 清理旧版本 (Cost Optimization)
+  rule {
+    id     = "cleanup-old-versions"
+    status = "Enabled"
+
+    # 如果文件被覆盖/删除，其历史版本保留 30 天后彻底清除
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+
+  # 规则 2: 清理 Glue 临时目录
   rule {
     id     = "expire-temporary-files"
     status = "Enabled"
@@ -41,7 +61,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "etl_assets_lifecycle" {
     }
   }
 
-  # 规则 2: 清理 Spark UI 日志
+  # 规则 3: 清理 Spark UI 日志
   rule {
     id     = "expire-spark-logs"
     status = "Enabled"
@@ -124,6 +144,11 @@ resource "aws_glue_job" "top_produce_etl_job" {
     # 价值：避免全量扫描，大幅降低计算成本并处理迟到数据。
     "--job-bookmark-option"              = "job-bookmark-enable"
 
+    # --- 开启 Auto Scaling (自动扩容) ---
+    # 核心功能：AWS 自动根据任务负载动态调整 Worker 数量。
+    # 价值：在任务开始阶段减少 Worker 使用，在计算密集阶段自动扩容，显著降低费用并提高效率。
+    "--enable-auto-scaling"              = "true"
+
     # --- 2. 用户自定义参数 (User Arguments) ---
     # 这些参数会原封不动地传给你的 sys.argv，你的 Python 脚本需要解析它们。
     
@@ -140,6 +165,16 @@ resource "aws_glue_job" "top_produce_etl_job" {
   tags = {
     Name        = "${var.project_name}-${var.environment}-top-produce-etl"
   }
+}
+
+# ------------------------------------------------------------------------------
+# CloudWatch 日志组 (Glue)
+# ------------------------------------------------------------------------------
+# 手动创建日志组以管理日志的保留策略，防止日志永久留存产生不必要的费用。
+# 注意：日志组名称必须与 Glue 任务名称匹配，Glue 才能自动写入。
+resource "aws_cloudwatch_log_group" "glue_logs" {
+  name              = "/aws-glue/jobs/${aws_glue_job.top_produce_etl_job.name}" // 这个是硬编码，就是这么写的，注意
+  retention_in_days = 14 # 保留 14 天
 }
 
 # ------------------------------------------------------------------------------

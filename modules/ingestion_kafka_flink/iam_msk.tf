@@ -392,3 +392,42 @@ resource "kafka_acl" "ec2_runner_consumer_group_acl" {
   #   prevent_destroy = true
   # }
 }
+
+# ------------------------------------------------------------------------------
+# MSK 存储自动扩容 (Storage Auto Scaling)
+# ------------------------------------------------------------------------------
+# 核心功能：当 Kafka Broker 磁盘使用率过高时，自动增加其 EBS 卷大小。
+resource "aws_appautoscaling_target" "msk_storage_target" {
+  # 扩容服务的命名空间，MSK 对应的是 kafka
+  service_namespace  = "kafka"
+  # 具体的资源标识符，这里是 MSK 集群的 ARN
+  resource_id        = aws_msk_cluster.kafka_cluster.arn
+  # 定义要扩容的维度：Kafka Broker 的存储卷大小
+  scalable_dimension = "kafka:broker-storage:VolumeSize"
+  # 自动扩容允许的最小值 (GB)
+  min_capacity       = 10
+  # 自动扩容允许的最大值 (GB)
+  max_capacity       = 1000
+}
+
+resource "aws_appautoscaling_policy" "msk_storage_policy" {
+  # 策略名称
+  name               = "${var.project_name}-${var.environment}-msk-storage-scaling"
+  # 必须与 target 中的命名空间一致
+  service_namespace  = aws_appautoscaling_target.msk_storage_target.service_namespace
+  # 关联的资源 ID
+  resource_id        = aws_appautoscaling_target.msk_storage_target.resource_id
+  # 关联的扩容维度
+  scalable_dimension = aws_appautoscaling_target.msk_storage_target.scalable_dimension
+  # 策略类型：目标跟踪扩容，使指标维持在设定值附近
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    # 使用 MSK 预定义的磁盘利用率指标
+    predefined_metric_specification {
+      predefined_metric_type = "KafkaBrokerStorageUtilization"
+    }
+    # 触发扩容的阈值：当磁盘使用率达到 70% 时执行扩容
+    target_value = 70.0
+  }
+}

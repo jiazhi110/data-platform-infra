@@ -26,7 +26,7 @@ variable "environment" {
 # Ingestion Module Variables (Kafka & Flink)
 # ------------------------------------------------------------------------------
 variable "kafka_broker_instance_type" {
-  # dev 环境中 MSK Broker 的实例类型。
+  # 开发环境中 MSK Broker 的实例类型。
   description = "The EC2 instance type for MSK broker nodes in development"
   type        = string
 }
@@ -38,6 +38,7 @@ variable "kafka_version" {
 }
 
 variable "flink_output_bucket" {
+  # 数据湖 S3 桶名，用于存储 Flink 输出和状态。
   description = "Name of the S3 bucket for Flink output and state"
   type        = string
 }
@@ -56,12 +57,14 @@ variable "flink_task_memory" {
 # Mock Data Generation Variables
 # ------------------------------------------------------------------------------
 variable "mock_data_image" {
+  # Mock 数据生成器的 Docker 镜像地址。
   description = "Docker image URI for the mock data generator"
   type        = string
-  default     = "ubuntu:latest" # Placeholder 占位符,不然action不动弹，必须要输入.
+  default     = "ubuntu:latest" 
 }
 
 variable "mock_data_schedule" {
+  # Mock 数据生成任务的 Cron 调度。
   description = "Schedule for the mock data task (Cron expression)"
   type        = string
   default     = null
@@ -81,7 +84,8 @@ variable "runner_iam_role_name" {
 # ETL Module Variables (Glue)
 # ------------------------------------------------------------------------------
 variable "glue_trigger_schedule" {
-  description = "Schedule for the Glue ETL job (Cron expression)"
+  # ETL 工作流的每日调度时间。
+  description = "Schedule for the Glue ETL pipeline (Cron expression)"
   type        = string
 }
 
@@ -94,6 +98,7 @@ variable "crawler_schedule" {
 # Monitoring & Alerting
 # ------------------------------------------------------------------------------
 variable "alert_email" {
+  # 接收系统报警的邮箱地址。
   description = "Email address for receiving system alerts"
   type        = string
 }
