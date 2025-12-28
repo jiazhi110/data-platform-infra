@@ -13,6 +13,7 @@ variable "environment" {
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
+  default     = "us-east-1" # 增加默认值，防止由于未加载 tfvars 导致的区域为空错误
 }
 
 variable "vpc_cidr" {
@@ -40,4 +41,3 @@ variable "az_count" {
     error_message = "az_count must be between 1 and 3"
   }
 }
-

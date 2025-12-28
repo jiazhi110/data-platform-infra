@@ -1,27 +1,5 @@
 # -----------------------------------------------------------------------------
 # Networking Module - main.tf
-#
-# 这个文件是 networking 模块的核心，负责创建所有基础网络资源。
-# 它是一个可复用的“组件”，通过接收变量来构建一套完整的网络环境。
-# VPC：1
-
-# NAT：1
-
-# IGW：1
-
-# public subnets：3
-
-# private subnets：3
-
-# public route table associations：3
-
-# private route table associations：3
-
-# public route table：1
-
-# private route table：1
-
-# EIP：1
 # -----------------------------------------------------------------------------
 
 # --- VPC (Virtual Private Cloud) ---

@@ -60,7 +60,7 @@ variable "mock_data_image" {
   # Mock 数据生成器的 Docker 镜像地址。
   description = "Docker image URI for the mock data generator"
   type        = string
-  default     = "ubuntu:latest" 
+  default     = "ubuntu:latest"
 }
 
 variable "mock_data_schedule" {
