@@ -404,8 +404,8 @@ resource "aws_appautoscaling_target" "msk_storage_target" {
   resource_id        = aws_msk_cluster.kafka_cluster.arn
   # 定义要扩容的维度：Kafka Broker 的存储卷大小
   scalable_dimension = "kafka:broker-storage:VolumeSize"
-  # 自动扩容允许的最小值 (GB)
-  min_capacity       = 10
+  # 自动扩容允许的最小值 (GB)  ValidationException: Minimum capacity cannot be greater than 1 ： AWS MSK 自动扩容的一个特殊机制：它只升不降。
+  min_capacity       = 1
   # 自动扩容允许的最大值 (GB)
   max_capacity       = 1000
 }
