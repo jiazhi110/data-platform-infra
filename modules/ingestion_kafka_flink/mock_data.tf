@@ -95,6 +95,11 @@ resource "aws_ecs_task_definition" "mock_data_task" {
     {
       name      = "mock-data-generator"
       image     = var.mockdata_image_url,
+      environment = [
+        { name = "PROJECT_NAME", value = var.project_name },
+        { name = "ENVIRONMENT",  value = var.environment },
+        { name = "AWS_REGION",   value = var.aws_region }
+      ],
       linuxParameters = {
         initProcessEnabled = true # 用于配置容器的 Linux 特性，确保一些特定的进程管理功能（如 init 进程）正常工作。
       },

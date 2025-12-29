@@ -199,6 +199,9 @@ resource "aws_ecs_task_definition" "producer_task" {
 
       # 环境变量配置
       environment = [
+        { name = "PROJECT_NAME", value = var.project_name },
+        { name = "ENVIRONMENT",  value = var.environment },
+        { name = "AWS_REGION",   value = var.aws_region },
         {
           name  = "FLINK_PROPERTIES",
           value = <<EOT
@@ -256,6 +259,9 @@ resource "aws_ecs_task_definition" "producer_task" {
 
       # 环境变量配置
       environment = [
+        { name = "PROJECT_NAME", value = var.project_name },
+        { name = "ENVIRONMENT",  value = var.environment },
+        { name = "AWS_REGION",   value = var.aws_region },
         {
           name  = "FLINK_PROPERTIES",
           value = <<EOT
