@@ -85,6 +85,13 @@ jobs:
           cat terraform.tfvars || echo "!!! terraform.tfvars NOT FOUND !!!"
       # --- 调试步骤结束 ---
 
+      # [新增] 运行模块单元测试
+      - name: Unit Test Monitoring Module
+        working-directory: ./modules/monitoring
+        run: |
+          terraform init
+          terraform test
+
       - name: Terraform Init, Validate & Fmt
         working-directory: ./environments/dev
         run: |
