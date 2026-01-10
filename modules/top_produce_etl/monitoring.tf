@@ -1,3 +1,4 @@
+# Monitor Glue Job State Changes.
 # 监听 Glue Job 的状态变化
 resource "aws_cloudwatch_event_rule" "glue_failure" {
   name        = "${var.project_name}-${var.environment}-glue-failure-rule"
@@ -13,6 +14,7 @@ resource "aws_cloudwatch_event_rule" "glue_failure" {
   })
 }
 
+# Trigger target: Send to SNS.
 # 触发目标：发送到 SNS
 resource "aws_cloudwatch_event_target" "sns_target" {
   rule      = aws_cloudwatch_event_rule.glue_failure.name

@@ -1,4 +1,5 @@
 # 1. Glue Service Role
+# Allow Glue service to assume this role to operate AWS resources.
 #    允许 Glue 服务扮演这个角色来操作 AWS 资源
 # document user guide ： https://docs.aws.amazon.com/zh_cn/glue/latest/dg/attach-policy-iam-user.html https://docs.aws.amazon.com/zh_cn/glue/latest/dg/set-up-iam.html
 resource "aws_iam_role" "glue_job_role" {
@@ -18,6 +19,8 @@ resource "aws_iam_role" "glue_job_role" {
   })
 }
 
+# 2. Attach AWS Managed Glue Basic Policy
+# This policy includes basic permissions like CloudWatch Logs writing and Glue API calls, saving us from writing them manually.
 # 2. 附加 AWS 托管的 Glue 基础策略
 #    这个策略包含了 CloudWatch Logs 写日志、Glue API 调用等基础权限，省得我们自己写
 resource "aws_iam_role_policy_attachment" "glue_service_policy" {
@@ -25,6 +28,8 @@ resource "aws_iam_role_policy_attachment" "glue_service_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
 }
 
+# 3. Custom Policy: Control S3 Access Only
+# This is the part we need to manually control, especially read/write access to data buckets.
 # 3. 自定义策略：只控制 S3 访问
 #    这是我们需要手动控制的部分，特别是对数据桶的读写
 resource "aws_iam_role_policy" "glue_s3_access" {
@@ -34,6 +39,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # Permission A: Read/Write scripts, temp files, and assets bucket
       # 权限 A: 读写脚本、临时文件和assets桶
       {
         Sid    = "AccessEtlAssets"
@@ -51,6 +57,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "arn:aws:s3:::${var.source_s3_bucket_name}/*"
         ]
       },
+      # Permission B: Read/Write Data Lake (Flink output + ETL output)
       # 权限 B: 读写数据湖 (Flink输出 + ETL输出)
       {
         Sid    = "AccessDataLake"
@@ -69,6 +76,8 @@ resource "aws_iam_role_policy" "glue_s3_access" {
   })
 }
 
+# Admin Policy: Allows Terraform caller to manage Glue resources and pass roles. 
+# This will be handled later as it's a global execution role policy. currently administrator access.
 # 管理员Policy：允许Terraform调用者管理Glue资源和传递角色 这个东西后面整，因为这个是 全局 执行terraform role policy，后面跑的时候一起给。现在是 administrator access.
 # resource "aws_iam_policy" "glue_admin_policy" {
 #   name        = "${var.project_name}-${var.environment}-glue-admin-policy"

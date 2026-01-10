@@ -1,6 +1,7 @@
 # ------------------------------------------------------------------------------
 # AWS Step Functions Orchestration
 # ------------------------------------------------------------------------------
+# Why use Step Functions? To orchestrate Glue Job and Crawler into a resilient, automated pipeline.
 # 为什么使用 Step Functions？
 # 为了将分散的 ETL 组件（Glue Job 和 Crawler）串联成一个自动化的、具备错误处理能力的流水线。
 # ------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ resource "aws_iam_role" "sfn_role" {
   })
 }
 
+# Grant Step Functions minimum permissions required for pipeline execution.
 # 授予 Step Functions 执行流水线所需的最小权限
 resource "aws_iam_role_policy" "sfn_policy" {
   name = "sfn-orchestration-policy"
@@ -30,6 +32,7 @@ resource "aws_iam_role_policy" "sfn_policy" {
     Version = "2012-10-17"
     Statement = [
       {
+        # Allow managing Glue Jobs (Start/Stop/Get).
         # 允许管理 Glue 作业
         Effect = "Allow"
         Action = [
@@ -40,6 +43,7 @@ resource "aws_iam_role_policy" "sfn_policy" {
         Resource = aws_glue_job.top_produce_etl_job.arn
       },
       {
+        # Allow managing Glue Crawlers.
         # 允许管理 Crawler
         Effect = "Allow"
         Action = [
@@ -49,6 +53,7 @@ resource "aws_iam_role_policy" "sfn_policy" {
         Resource = aws_glue_crawler.etl_crawler.arn
       },
       {
+        # Allow publishing alerts to SNS.
         # 允许发送报警通知
         Effect = "Allow"
         Action = [
@@ -60,6 +65,7 @@ resource "aws_iam_role_policy" "sfn_policy" {
   })
 }
 
+# 2. State Machine Definition
 # 2. State Machine 定义
 resource "aws_sfn_state_machine" "etl_pipeline" {
   name     = "${var.project_name}-${var.environment}-etl-workflow"
@@ -69,13 +75,17 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
     Comment = "Orchestrates Glue ETL Job and Crawler with Error Handling"
     StartAt = "RunETLJob"
     States = {
+      # Step 1: Run Glue ETL Job
       # 步骤 1: 运行 Glue ETL 任务
       "RunETLJob" = {
         Type     = "Task"
-        Resource = "arn:aws:states:::glue:startJobRun.sync" # .sync 模式会自动等待 Job 完成
+        # Use .sync pattern to wait for job completion automatically.
+        # .sync 模式会自动等待 Job 完成
+        Resource = "arn:aws:states:::glue:startJobRun.sync" 
         Parameters = {
           JobName = aws_glue_job.top_produce_etl_job.name
         }
+        # Resilience pattern - Retry on failure with exponential backoff.
         # 自动重试策略 (Resilience)
         Retry = [{
           ErrorEquals     = ["Glue.AWSGlueException", "States.TaskFailed"],
@@ -84,13 +94,15 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
           BackoffRate     = 2.0  # 每次等待时间翻倍
         }]
         Next = "RunCrawler"
+        # Circuit Breaker - Catch errors and alert immediately if retries fail.
         # 错误捕获：如果重试后依然失败，直接跳到报警步骤
         Catch = [{
-          ErrorEquals = ["States.ALL"]
+          ErrorEquals = ["States.ALL"],
           Next        = "NotifyFailure"
         }]
       }
 
+      # Step 2: Run Crawler to update metadata after successful ETL.
       # 步骤 2: ETL 成功后，运行 Crawler 更新元数据
       "RunCrawler" = {
         Type     = "Task"
@@ -101,6 +113,7 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Next = "NotifySuccess"
       }
 
+      # Step 3 (Success Path): Send completion notification.
       # 步骤 3 (成功路径): 发送完成通知
       "NotifySuccess" = {
         Type     = "Task"
@@ -112,6 +125,7 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         End = true
       }
 
+      # Step 3 (Failure Path): Send failure alert.
       # 步骤 3 (失败路径): 发送失败报警
       "NotifyFailure" = {
         Type     = "Task"
@@ -126,6 +140,8 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
   })
 }
 
+# 3. Scheduled Trigger (EventBridge Scheduler)
+# Centralized scheduling managed by EventBridge triggers, replacing scattered Glue Triggers.
 # 3. 定时调度 (EventBridge Scheduler)
 # 替代原本分散在 Glue Trigger 里的定时逻辑，统一由 EventBridge 触发 SFN
 resource "aws_cloudwatch_event_rule" "etl_schedule" {
@@ -142,6 +158,7 @@ resource "aws_cloudwatch_event_target" "trigger_sfn" {
   role_arn  = aws_iam_role.eventbridge_sfn_role.arn
 }
 
+# IAM Role specifically for EventBridge to trigger SFN.
 # 专门给 EventBridge 用来触发 SFN 的 IAM Role
 resource "aws_iam_role" "eventbridge_sfn_role" {
   name = "${var.project_name}-${var.environment}-eb-sfn-role"

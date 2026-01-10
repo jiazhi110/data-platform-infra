@@ -1,26 +1,25 @@
 name: Deploy Flink Application
 
+# Core trigger: Listen for dispatch events from external repositories
 # 核心触发器：监听来自外部仓库的 dispatch 事件
 on:
 #   repository_dispatch:
+#     # Only respond to triggers with event type 'flink-deploy'
 #     # 只响应事件类型为 'flink-deploy' 的触发
 #     types: [flink-deploy]
 
   schedule:
+    # Automatically trigger dev environment deployment every day at 5:00 UTC (13:00 Beijing time)
     # 每天 UTC 5:00 (东八区时间 13:00) 自动触发 dev 环境部署
     - cron: '0 5 * * *'
 
+  # Trigger 2: Allows manual trigger of this workflow from the GitHub UI
   # 触发器 2: 允许在 GitHub UI 上手动触发此 workflow
   workflow_dispatch:
     inputs:
-      # 我们在这里定义手动触发时需要输入的参数
-      # 这些参数的名字和默认值都来自于你提供的上游 dispatch log
-      # image_uri:
-      #   description: '【用于测试】要部署的完整 Docker 镜像 URI'
-      #   required: true
-      #   default: '461636397270.dkr.ecr.us-east-1.amazonaws.com/ingestion_kafka_flink:latest'
-      #   type: string
       environment:
+        # Target environment to deploy (dev or prod)
+        # 要部署的目标环境 (dev 或 prod)
         description: '要部署的目标环境 (dev 或 prod)'
         required: true
         default: 'dev'
@@ -28,37 +27,32 @@ on:
         options:
           - dev
           - prod
-#       ref:
-#         description: '【用于测试】来源分支 (例如 develop)'
-#         required: false
-#         default: 'develop'
-#         type: string
-#       sha:
-#         description: '【用于测试】来源 Commit SHA (用于追溯)'
-#         required: false
-#         default: 'c073ede61bd92b16c18272398d0b66cc0263b87f'
-#         type: string
 
 jobs:
   #====================================================
-  #==             部署到开发环境 (Dev)             ==
-  #==         一个 Job 完成所有自动化操作            ==
+  #==      Deploy to Development Environment (Dev)   ==
+  #==      One job to complete all automated tasks   ==
+  #==             部署到开发环境 (Dev)                 ==
+  #==         一个 Job 完成所有自动化操作              ==
   #====================================================
   deploy-dev:
+    # Condition: Run only when the environment field in the trigger event is 'dev'
     # 条件：仅当触发事件中的环境字段为 'dev' 时运行
-    # if: >-
-    #   (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
-    #   (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'dev')
-    # if: github.event.inputs.environment == 'dev'
     if: >-
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
       (github.event_name == 'schedule' || github.event.inputs.environment == 'dev')
 
     runs-on: self-hosted
-    environment: dev # 关联到名为 'dev' 的 GitHub Environment
+    # Associated with the GitHub Environment named 'dev'
+    # 关联到名为 'dev' 的 GitHub Environment
+    environment: dev 
     permissions:
-      id-token: write   # OIDC 权限
-      contents: read    # 拉取代码权限
+      # OIDC permissions
+      # id-token: write   # OIDC 权限
+      # Code checkout permissions
+      # contents: read    # 拉取代码权限
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -67,25 +61,16 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.DEV_AWS_ROLE_ARN }} # 使用 Dev 环境的 IAM Role
+          # Use the IAM Role for the Dev environment
+          # role-to-assume: ${{ secrets.DEV_AWS_ROLE_ARN }} # 使用 Dev 环境的 IAM Role
+          role-to-assume: ${{ secrets.DEV_AWS_ROLE_ARN }} 
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # --- 新增的调试步骤 ---
-      - name: List files for debugging
-        # 确保工作目录和你 Terraform 的一致！
-        working-directory: ./environments/dev # <-- ‼️ 替换成你的真实路径
-        run: |
-          echo "--- Listing all files recursively ---"
-          ls -R
-          echo "--- Checking content of terraform.tfvars ---"
-          # 如果文件存在，就打印它的内容；如果不存在，就报告错误
-          cat terraform.tfvars || echo "!!! terraform.tfvars NOT FOUND !!!"
-      # --- 调试步骤结束 ---
-
-      # [新增] 运行模块单元测试
+      # Run module unit tests
+      # 运行模块单元测试
       - name: Unit Test Monitoring Module
         working-directory: ./modules/monitoring
         run: |
@@ -102,10 +87,13 @@ jobs:
       - name: Terraform Plan & Apply (Dev)
         working-directory: ./environments/dev
 #         env:
+#           # Use ternary expressions to intelligently determine the data source and set it as a Terraform variable.
+#           # Terraform automatically recognizes environment variables starting with TF_VAR_.
 #           # 使用三元表达式智能判断数据来源，并将其设置为 Terraform 变量
 #           # Terraform 会自动识别以 TF_VAR_ 开头的环境变量
 #           TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
         run: |
+          # In the Dev environment, Plan and Apply directly without -var parameters
           # 在 Dev 环境，直接 Plan 并自动 Apply,无需再写 -var 参数
           terraform plan
           terraform apply -auto-approve
@@ -114,6 +102,8 @@ jobs:
           # terraform apply -auto-approve -target="module.ingestion"
 
   #====================================================
+  #==  Production Deployment Step 1: Planning (Plan) ==
+  #==  Generate the plan and upload it as a "sealed blueprint" ==
   #==         生产环境部署第一步：规划 (Plan)        ==
   #==   生成计划并将其作为“密封的蓝图”上传          ==
   #====================================================
@@ -135,7 +125,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.PROD_AWS_ROLE_ARN }} # 使用 Prod 环境的 IAM Role
+          # Use the IAM Role for the Prod environment
+          # role-to-assume: ${{ secrets.PROD_AWS_ROLE_ARN }} # 使用 Prod 环境的 IAM Role
+          role-to-assume: ${{ secrets.PROD_AWS_ROLE_ARN }} 
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Terraform
@@ -153,6 +145,7 @@ jobs:
         # env:
         #   TF_VAR_flink_image_uri: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_uri || github.event.client_payload.image_uri }}
         run: |
+          # Key: Generate the plan and save it to the file 'tfplan'
           # 关键：生成计划并将其保存到文件 tfplan 中
           terraform plan -out=tfplan
 
@@ -160,30 +153,36 @@ jobs:
         id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
+          # Upload the tfplan file as an artifact.
+          # Include the commit SHA in the name to ensure uniqueness.
           # 将 tfplan 文件上传为一个工件 (artifact)
           # 命名中包含 commit SHA，确保其唯一性
           name: prod-tfplan-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sha || github.event.client_payload.sha }}
           path: tfplan
 
   #====================================================
+  #== Production Deployment Step 2: Approval and Execution (Apply) ==
+  #== Download the "sealed blueprint", wait for approval, then execute ==
   #==      生产环境部署第二步：审批与应用 (Apply)    ==
   #==     下载“密封的蓝图”，等待审批，然后执行       ==
   #====================================================
   apply-prod:
+    # Dependency: Must wait for the plan-prod job to complete successfully
     # 依赖：必须等待 plan-prod 作业成功完成
     needs: plan-prod
-    # if: >-
-    #   (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod') ||
-    #   (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'prod')
     if: github.event_name != 'schedule' && github.event.inputs.environment == 'prod'
     # runs-on: ubuntu-latest
     runs-on: self-hosted  #self-hosted-runner
     
+    # Key: Associated with the Prod environment, triggering manual approval rules
     # 关键：关联到 Prod 环境，触发手动审批规则
     environment:
       name: prod
-      url: '[https://console.aws.amazon.com/kinesisanalytics/home](https://console.aws.amazon.com/kinesisanalytics/home)' # (可选) 生产环境 Flink 控制台 URL
+      # (Optional) Production Flink Console URL
+      # (可选) 生产环境 Flink 控制台 URL
+      url: 'https://console.aws.amazon.com/kinesisanalytics/home' 
 
+    # Concurrency control: Ensure only one production deployment runs at a time
     # 并发控制：确保同一时间只有一个生产部署在进行
     concurrency:
       group: prod-deployment
@@ -200,6 +199,7 @@ jobs:
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
         with:
+          # Download the exact matching "blueprint" uploaded by the plan-prod job
           # 下载由 plan-prod 作业上传的、精确匹配的“蓝图”
           name: ${{ needs.plan-prod.outputs.tf_plan_artifact_name }}
 
@@ -219,6 +219,8 @@ jobs:
       - name: Terraform Apply (Prod)
         working-directory: ./environments/prod
         run: |
+          # Key: Directly apply the downloaded tfplan file
           # 关键：直接应用下载的 tfplan 文件
+          # This ensures the executed changes match exactly what was seen in the planning stage
           # 这确保了执行的变更与规划阶段看到的完全一致
           terraform apply -input=false tfplan
