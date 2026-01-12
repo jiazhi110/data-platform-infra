@@ -1,8 +1,6 @@
-# Development Environment - Data Platform Infrastructure
-# 开发环境 - 数据平台基础设施
+# --- Development Environment: Data Platform Infrastructure ---
 
-# --- Network Layer (Remote State) ---
-# --- 网络层 (远程状态) ---
+# Network Layer (Remote State Access)
 data "terraform_remote_state" "network" {
   backend = "s3"
   config = {
@@ -14,8 +12,7 @@ data "terraform_remote_state" "network" {
   }
 }
 
-# --- Monitoring Module ---
-# --- 监控模块 ---
+# Monitoring and Alerting Module
 module "monitoring" {
   source = "../../modules/monitoring"
 
@@ -24,25 +21,21 @@ module "monitoring" {
   alert_email  = var.alert_email
 }
 
-# --- Ingestion Module (Kafka + Flink) ---
-# --- 摄取模块 (Kafka + Flink) ---
+# Ingestion Layer (Kafka + Flink)
 module "ingestion" {
   source = "../../modules/ingestion_kafka_flink"
 
-  # --- Common Inputs ---
-  # --- 通用输入 ---
+  # Common Configurations
   project_name = var.project_name
   environment  = var.environment
   aws_region   = var.aws_region
 
-  # --- Network Inputs ---
-  # --- 网络输入 ---
+  # Network Inputs
   vpc_id             = data.terraform_remote_state.network.outputs.vpc_id
   public_subnet_ids  = data.terraform_remote_state.network.outputs.public_subnet_ids
   private_subnet_ids = data.terraform_remote_state.network.outputs.private_subnet_ids
 
-  # --- Module Specific Inputs ---
-  # --- 模块特定输入 ---
+  # Module-Specific Configurations
   kafka_broker_instance_type = var.kafka_broker_instance_type
   kafka_version              = var.kafka_version
 
@@ -57,13 +50,11 @@ module "ingestion" {
   runner_security_group_name = var.runner_security_group_name
   runner_iam_role_name       = var.runner_iam_role_name
 
-  # --- Alerting ---
-  # --- 报警配置 ---
+  # Alerting Configuration
   sns_alert_topic_arn = module.monitoring.sns_topic_arn
 }
 
-# --- ETL Module (Glue) ---
-# --- ETL 模块 (Glue) ---
+# Batch Processing Layer (Glue ETL)
 module "top_produce_etl" {
   source = "../../modules/top_produce_etl"
 
@@ -71,17 +62,12 @@ module "top_produce_etl" {
   environment  = var.environment
   aws_region   = var.aws_region
 
-  # Source: Flink Output Bucket
-  # 数据源：Flink 输出桶
-  source_s3_bucket_name = module.ingestion.flink_output_bucket
-  # Destination: Same bucket (different prefix)
-  # 目的地：同一个桶 (不同的前缀)
+  # Data Lake integration
+  source_s3_bucket_name      = module.ingestion.flink_output_bucket
   destination_s3_bucket_name = module.ingestion.flink_output_bucket
 
   glue_trigger_schedule = var.glue_trigger_schedule
   crawler_schedule      = var.crawler_schedule
 
-  # --- Alerting ---
-  # --- 报警配置 ---
   sns_alert_topic_arn = module.monitoring.sns_topic_arn
 }

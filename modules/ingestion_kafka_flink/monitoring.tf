@@ -1,5 +1,4 @@
-# Monitor ECS Task state changes.
-# 监听 ECS Task 的状态变化
+# CloudWatch Event Rule to monitor ECS Task state changes.
 resource "aws_cloudwatch_event_rule" "flink_task_stop" {
   name        = "${var.project_name}-${var.environment}-flink-stop-rule"
   description = "Capture if the Flink ECS task stops unexpectedly."
@@ -9,18 +8,13 @@ resource "aws_cloudwatch_event_rule" "flink_task_stop" {
     detail-type = ["ECS Task State Change"],
     detail = {
       clusterArn = [aws_ecs_cluster.main_cluster.arn],
-      # lastStatus = "STOPPED" means the task has stopped.
-      # lastStatus = "STOPPED" 表示任务已经停止
       lastStatus = ["STOPPED"],
-      # Only monitor tasks of the Flink Service.
-      # 只监听 Flink Service 的任务
       group      = ["service:${aws_ecs_service.producer_service.name}"]
     }
   })
 }
 
-# Trigger target: send to SNS.
-# 触发目标：发送到 SNS
+# SNS target for Flink task stop events.
 resource "aws_cloudwatch_event_target" "flink_sns_target" {
   rule      = aws_cloudwatch_event_rule.flink_task_stop.name
   target_id = "SendToSNS"

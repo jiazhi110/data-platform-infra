@@ -2,23 +2,18 @@ name: Scheduled Destroy (Dev)
 
 on:
   schedule:
-    # Automatically trigger dev environment destruction every day at 11:00 UTC (19:00 Beijing time)
-    # 每天 UTC 11:00 (东八区时间 19:00) 自动触发 dev 环境销毁
+    # Daily automated destruction of dev environment at 11:00 UTC.
     - cron: '0 11 * * *'
-  workflow_dispatch: # Allows manual triggering / 允许手动触发
+  workflow_dispatch: # Allows manual trigger.
 
 jobs:
   destroy-dev:
     name: Destroy Dev Environment
-    # Ensure it only runs on the main branch
-    # if: github.ref == 'refs/heads/main' # 确保只在主分支上运行
     runs-on: self-hosted
     environment: dev
     permissions:
-      # OIDC permissions / OIDC 权限
-      # Code checkout permissions / 拉取代码权限
-      id-token: write   
-      contents: read    
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -27,7 +22,6 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # Reuse Dev environment role / 重用dev环境的Role
           role-to-assume: ${{ secrets.DEV_AWS_ROLE_ARN }} 
           aws-region: ${{ secrets.AWS_REGION }}
 
@@ -38,6 +32,7 @@ jobs:
         working-directory: ./environments/dev
         run: terraform init -reconfigure
 
+      # Remove specific Kafka resources from state to avoid dependency issues during cluster destruction.
       - name: Remove Kafka Resources from State
         working-directory: ./environments/dev
         run: |
@@ -52,5 +47,3 @@ jobs:
       - name: Terraform Destroy
         working-directory: ./environments/dev
         run: terraform destroy -auto-approve
-        # remove target as dependency lock
-        # run: terraform destroy -auto-approve -target="module.ingestion"
