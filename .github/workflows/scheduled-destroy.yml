@@ -1,4 +1,4 @@
-name: Scheduled Destroy (Dev)
+name: Cost Optimization - Nightly Teardown
 
 on:
   schedule:
