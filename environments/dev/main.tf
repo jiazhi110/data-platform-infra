@@ -4,9 +4,21 @@
 data "terraform_remote_state" "network" {
   backend = "s3"
   config = {
-    bucket       = "justin-data-platform-tfstate-bucket-dev"
+    bucket       = "justin-${var.project_name}-tfstate-bucket-${var.environment}"
     key          = "network/terraform.tfstate"
-    region       = "us-east-1"
+    region       = var.aws_region
+    encrypt      = true
+    use_lockfile = true
+  }
+}
+
+# Shared Layer (ECR & SSM Pointers)
+data "terraform_remote_state" "shared" {
+  backend = "s3"
+  config = {
+    bucket       = "justin-${var.project_name}-tfstate-bucket-${var.environment}"
+    key          = "shared/terraform.tfstate"
+    region       = var.aws_region
     encrypt      = true
     use_lockfile = true
   }

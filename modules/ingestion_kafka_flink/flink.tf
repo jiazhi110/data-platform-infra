@@ -1,19 +1,3 @@
-# --- ECR (Elastic Container Registry) ---
-# Private registry for storing Producer application Docker images.
-resource "aws_ecr_repository" "producer_repo" {
-  name                 = "${var.project_name}-${var.environment}-producer-repo"
-  # Allow tag overwriting for 'latest' tags in dev environments.
-  image_tag_mutability = "MUTABLE" 
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Name = "${var.project_name}-producer-repo"
-  }
-}
-
 # --- ECS (Elastic Container Service) ---
 resource "aws_ecs_cluster" "main_cluster" {
   name = "${var.project_name}-${var.environment}-cluster"
