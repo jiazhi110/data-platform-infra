@@ -3,15 +3,13 @@
 # ------------------------------------------------------------------------------
 
 # --- ECR: Flink Producer ---
+# Inherits tags (Project, Environment, Layer) from provider default_tags
 resource "aws_ecr_repository" "producer_repo" {
   name                 = "${var.project_name}-flink-producer-repo"
   image_tag_mutability = "MUTABLE"
+  # It automatically scans for security vulnerabilities.
   image_scanning_configuration {
     scan_on_push = true
-  }
-  tags = {
-    Name        = "${var.project_name}-flink-producer-repo"
-    Environment = var.environment
   }
 }
 
@@ -20,13 +18,10 @@ resource "aws_ssm_parameter" "producer_repo_name" {
   name  = "/${var.project_name}/${var.environment}/ecr/producer_repo_name"
   type  = "String"
   value = aws_ecr_repository.producer_repo.name
-
-  tags = {
-    Environment = var.environment
-  }
 }
 
 # SSM: Persistent Pointer for Flink Image URL (Dev)
+# Stores the specific image tag currently active for Dev.
 resource "aws_ssm_parameter" "flink_image_url_dev" {
   name  = "/${var.project_name}/dev/ingestion/flink_job_image_url"
   type  = "String"
@@ -36,9 +31,9 @@ resource "aws_ssm_parameter" "flink_image_url_dev" {
     ignore_changes = [value]
   }
 
+  # Override Environment tag because this specific resource serves the Dev environment
   tags = {
     Environment = "dev"
-    Layer       = var.environment
     Description = "Pointer to current Dev Flink Image"
   }
 }
@@ -50,10 +45,6 @@ resource "aws_ecr_repository" "mock_data_repo" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  tags = {
-    Name        = "${var.project_name}-mock-data-repo"
-    Environment = var.environment
-  }
 }
 
 # SSM: Expose Mock Data Repo Name for CI/CD
@@ -61,10 +52,6 @@ resource "aws_ssm_parameter" "mock_data_repo_name" {
   name  = "/${var.project_name}/${var.environment}/ecr/mock_data_repo_name"
   type  = "String"
   value = aws_ecr_repository.mock_data_repo.name
-
-  tags = {
-    Environment = var.environment
-  }
 }
 
 # SSM: Persistent Pointer for Mock Data Image URL (Dev)
@@ -77,9 +64,9 @@ resource "aws_ssm_parameter" "mockdata_image_url_dev" {
     ignore_changes = [value]
   }
 
+  # Override Environment tag
   tags = {
     Environment = "dev"
-    Layer       = var.environment
     Description = "Pointer to current Dev Mock Data Image"
   }
 }

@@ -10,8 +10,14 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "environment" {
-  description = "Environment identifier (e.g., shared, tools)"
+variable "layer" {
+  description = "Infrastructure layer identifier (e.g., shared, network)"
   type        = string
   default     = "shared"
+}
+
+variable "environment" {
+  description = "Environment context (default to shared for this layer)"
+  type        = string
+  default     = "dev"
 }
