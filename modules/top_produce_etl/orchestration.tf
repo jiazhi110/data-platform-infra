@@ -119,19 +119,21 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Type = "Choice"
         Choices = [
           {
-            # Crawler is running or stopping -> Keep waiting
-            Variable = "$.Crawler.State"
-            StringMatches = ["RUNNING", "STOPPING"]
-            Next = "WaitCrawler"
+            Variable     = "$.Crawler.State"
+            StringEquals = "RUNNING"
+            Next         = "WaitCrawler"
           },
           {
-            # Crawler is ready -> Success
-            Variable = "$.Crawler.State"
+            Variable     = "$.Crawler.State"
+            StringEquals = "STOPPING"
+            Next         = "WaitCrawler"
+          },
+          {
+            Variable     = "$.Crawler.State"
             StringEquals = "READY"
-            Next = "NotifySuccess"
+            Next         = "NotifySuccess"
           }
         ]
-        # Default fallback if state is unknown
         Default = "NotifyFailure"
       }
 
