@@ -58,19 +58,20 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
   name     = "${var.project_name}-${var.environment}-etl-workflow"
   role_arn = aws_iam_role.sfn_role.arn
 
+  # Global timeout to prevent infinite loops (Standard safety measure)
+  timeout_seconds = 3600 
+
   definition = jsonencode({
-    Comment = "Orchestrates Glue ETL Job and Crawler with Error Handling"
+    Comment = "Production-grade Glue ETL Orchestration with Result Validation"
     StartAt = "RunETLJob"
     States = {
-      # Step 1: Run Glue ETL Job. 
-      # .sync pattern waits for job completion before proceeding.
+      # Step 1: Run Glue ETL Job (Synchronous)
       "RunETLJob" = {
         Type     = "Task"
         Resource = "arn:aws:states:::glue:startJobRun.sync" 
         Parameters = {
           JobName = aws_glue_job.top_produce_etl_job.name
         }
-        # Retry Strategy: Exponential backoff for AWS service exceptions.
         Retry = [{
           ErrorEquals     = ["Glue.AWSGlueException", "States.TaskFailed"],
           IntervalSeconds = 60,
@@ -78,20 +79,26 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
           BackoffRate     = 2.0
         }]
         Next = "RunCrawler"
-        # Catch Block: Notify failure via SNS if retries are exhausted.
         Catch = [{
           ErrorEquals = ["States.ALL"],
           Next        = "NotifyFailure"
         }]
       }
 
-      # Step 2: Start Glue Crawler (Async)
+      # Step 2: Start Glue Crawler
       "RunCrawler" = {
         Type     = "Task"
         Resource = "arn:aws:states:::aws-sdk:glue:startCrawler"
         Parameters = {
           Name = aws_glue_crawler.etl_crawler.name
         }
+        # Retry for Transient API errors (Throttling, etc.)
+        Retry = [{
+          ErrorEquals     = ["States.ALL"],
+          IntervalSeconds = 5,
+          MaxAttempts     = 3,
+          BackoffRate     = 2.0
+        }]
         Next = "WaitCrawler"
         Catch = [{
           ErrorEquals = ["States.ALL"],
@@ -99,7 +106,6 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         }]
       }
 
-      # Step 3: Wait Loop for Crawler Completion
       "WaitCrawler" = {
         Type    = "Wait"
         Seconds = 30
@@ -112,10 +118,16 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Parameters = {
           Name = aws_glue_crawler.etl_crawler.name
         }
-        Next = "CheckCrawlerStatus"
+        Retry = [{
+          ErrorEquals     = ["States.ALL"],
+          IntervalSeconds = 2,
+          MaxAttempts     = 3
+        }]
+        Next = "CheckCrawlerState"
       }
 
-      "CheckCrawlerStatus" = {
+      # Step 3: Check if Crawler finished its cycle
+      "CheckCrawlerState" = {
         Type = "Choice"
         Choices = [
           {
@@ -131,6 +143,20 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
           {
             Variable     = "$.Crawler.State"
             StringEquals = "READY"
+            Next         = "CheckCrawlOutcome" # Proceed to outcome validation
+          }
+        ]
+        Default = "NotifyFailure"
+      }
+
+      # Step 4: Validate the actual outcome (Senior Best Practice)
+      # Ensures we don't report Success if the Crawler finished but failed internally.
+      "CheckCrawlOutcome" = {
+        Type = "Choice"
+        Choices = [
+          {
+            Variable     = "$.Crawler.LastCrawl.Status"
+            StringEquals = "SUCCEEDED"
             Next         = "NotifySuccess"
           }
         ]
@@ -142,7 +168,7 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Resource = "arn:aws:states:::sns:publish"
         Parameters = {
           TopicArn = var.sns_alert_topic_arn
-          Message  = "SUCCESS: ETL Pipeline completed. Data available in Athena."
+          Message  = "SUCCESS: ETL Pipeline completed. Data is now searchable in Athena."
         }
         End = true
       }
@@ -152,7 +178,7 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Resource = "arn:aws:states:::sns:publish"
         Parameters = {
           TopicArn = var.sns_alert_topic_arn
-          Message  = "ALERT: Glue ETL Job failed. Check CloudWatch logs for details."
+          Message  = "ALERT: ETL Pipeline FAILED. Please check Step Functions execution log or Glue Job CloudWatch logs."
         }
         End = true
       }
