@@ -62,7 +62,7 @@ resource "aws_ssm_parameter" "flink_image_url_dev" {
 resource "aws_ecr_repository" "mock_data_repo" {
   name                 = "${var.project_name}-mock-data-repo"
   image_tag_mutability = "MUTABLE"
-  
+
   image_scanning_configuration {
     scan_on_push = true
   }

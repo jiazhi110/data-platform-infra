@@ -85,14 +85,54 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         }]
       }
 
-      # Step 2: Update Metadata via Glue Crawler.
+      # Step 2: Start Glue Crawler (Async)
       "RunCrawler" = {
         Type     = "Task"
         Resource = "arn:aws:states:::aws-sdk:glue:startCrawler"
         Parameters = {
           Name = aws_glue_crawler.etl_crawler.name
         }
-        Next = "NotifySuccess"
+        Next = "WaitCrawler"
+        Catch = [{
+          ErrorEquals = ["States.ALL"],
+          Next        = "NotifyFailure"
+        }]
+      }
+
+      # Step 3: Wait Loop for Crawler Completion
+      "WaitCrawler" = {
+        Type    = "Wait"
+        Seconds = 30
+        Next    = "GetCrawlerStatus"
+      }
+
+      "GetCrawlerStatus" = {
+        Type     = "Task"
+        Resource = "arn:aws:states:::aws-sdk:glue:getCrawler"
+        Parameters = {
+          Name = aws_glue_crawler.etl_crawler.name
+        }
+        Next = "CheckCrawlerStatus"
+      }
+
+      "CheckCrawlerStatus" = {
+        Type = "Choice"
+        Choices = [
+          {
+            # Crawler is running or stopping -> Keep waiting
+            Variable = "$.Crawler.State"
+            StringMatches = ["RUNNING", "STOPPING"]
+            Next = "WaitCrawler"
+          },
+          {
+            # Crawler is ready -> Success
+            Variable = "$.Crawler.State"
+            StringEquals = "READY"
+            Next = "NotifySuccess"
+          }
+        ]
+        # Default fallback if state is unknown
+        Default = "NotifyFailure"
       }
 
       "NotifySuccess" = {
