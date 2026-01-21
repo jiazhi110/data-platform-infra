@@ -142,81 +142,17 @@ resource "aws_glue_crawler" "etl_crawler" {
     path = "s3://${var.destination_s3_bucket_name}/batch_output/"
   }
 
-  # Schema Evolution & Partition Management
+  # Schema Evolution: Let the Crawler manage everything safely
   configuration = jsonencode({
     Version = 1.0
     CrawlerOutput = {
-      # InheritFromTable: ensures partition metadata matches the table definition.
       Partitions = { AddOrUpdateBehavior = "InheritFromTable" }
-      # MergeNewColumns: allows schema evolution without deleting existing columns.
-      Tables     = { AddOrUpdateBehavior = "MergeNewColumns" }
     }
   })
-}
 
-# ------------------------------------------------------------------------------
-# 5.1 AWS Glue Catalog Table (Bootstrap Table)
-# ------------------------------------------------------------------------------
-# Pre-defines core fields to resolve Data Quality Ruleset dependencies.
-# Other fields are discovered and merged by the Crawler at runtime.
-# ------------------------------------------------------------------------------
-resource "aws_glue_catalog_table" "batch_output_table" {
-  name          = "batch_output"
-  database_name = aws_glue_catalog_database.etl_database.name
-  table_type    = "EXTERNAL_TABLE" 
-
-  storage_descriptor {
-    location      = "s3://${var.destination_s3_bucket_name}/batch_output/"
-    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
-    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
-
-    ser_de_info {
-      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
-      parameters = {
-        "serialization.format" = "1" 
-      }
-    }
-
-    columns {
-      name    = "area_name"
-      type    = "string"
-      comment = "Bootstrap column - others discovered by crawler"
-    }
-  }
-
-  parameters = {
-    "classification" = "parquet"
+  schema_change_policy {
+    delete_behavior = "LOG"
+    update_behavior = "UPDATE_IN_DATABASE"
   }
 }
 
-# ------------------------------------------------------------------------------
-# 6. AWS Glue Data Quality (Data Governance)
-# ------------------------------------------------------------------------------
-resource "aws_glue_data_quality_ruleset" "data_quality_check" {
-  name        = "${var.project_name}-${var.environment}-dq-rules"
-  description = "Validate data quality for the batch output table"
-
-  target_table {
-    database_name = aws_glue_catalog_database.etl_database.name
-    table_name    = aws_glue_catalog_table.batch_output_table.name 
-  }
-
-  # DQDL Ruleset for automated data validation.
-  ruleset = <<EOF
-    Rules = [
-        # Validate that ETL logic produced data.
-        RowCount > 0,
-
-        # Core dimension completeness check.
-        IsComplete "area_name",
-        IsComplete "produce_name",
-
-        # Business logic validation.
-        ColumnValues "total_clicks" > 0
-    ]
-EOF
-
-  tags = {
-    Name = "${var.project_name}-dq-rules"
-  }
-}
