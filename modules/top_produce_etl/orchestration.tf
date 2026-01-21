@@ -58,12 +58,10 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
   name     = "${var.project_name}-${var.environment}-etl-workflow"
   role_arn = aws_iam_role.sfn_role.arn
 
-  # Global timeout to prevent infinite loops (Standard safety measure)
-  timeout_seconds = 3600 
-
   definition = jsonencode({
-    Comment = "Production-grade Glue ETL Orchestration with Result Validation"
-    StartAt = "RunETLJob"
+    Comment         = "Production-grade Glue ETL Orchestration with Result Validation"
+    StartAt         = "RunETLJob"
+    timeout_seconds = 3600
     States = {
       # Step 1: Run Glue ETL Job (Synchronous)
       "RunETLJob" = {
