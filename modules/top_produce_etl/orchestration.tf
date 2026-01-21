@@ -61,7 +61,6 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
   definition = jsonencode({
     Comment         = "Production-grade Glue ETL Orchestration with Result Validation"
     StartAt         = "RunETLJob"
-    timeout_seconds = 3600
     States = {
       # Step 1: Run Glue ETL Job (Synchronous)
       "RunETLJob" = {
