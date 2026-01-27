@@ -20,8 +20,8 @@ This project is modularized into three distinct repositories to simulate a real-
 | Repository | Role | Tech Stack |
 | :--- | :--- | :--- |
 | **`data-platform-infra`** (This Repo) | **Infrastructure & Orchestration** | Terraform, VPC, ECS, MSK, Step Functions, Glue Catalog |
-| [**`ingestion-kafka-flink`**](https://github.com/jiazhi110/ingestion_kafka_flink) | **Real-time Ingestion Layer** | Java (Flink), Python (Mock Data), Docker |
-| [**`top-product-etl`**](https://github.com/jiazhi110/Top-produce-ETL) | **Batch Processing Layer** | Python (Spark), Glue Scripts |
+| [**`ingestion-kafka-flink`**](https://github.com/jiazhi110/ingestion-kafka-flink) | **Real-time Ingestion Layer** | Java (Flink), Python (Mock Data), Docker |
+| [**`top-product-etl`**](https://github.com/jiazhi110/top-product-etl) | **Batch Processing Layer** | Python (Spark), Glue Scripts |
 
 ---
 
