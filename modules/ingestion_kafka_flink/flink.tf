@@ -35,9 +35,10 @@ resource "aws_ecs_task_definition" "producer_task" {
             # Bind to 0.0.0.0 to allow Web UI access.
             rest.address: 0.0.0.0
 
-            # Resource Scheduling
+            # Resource Scheduling (Adaptive Mode)
             taskmanager.numberOfTaskSlots: 1
-            parallelism.default: 1
+            # parallelism.default: 1
+            jobmanager.scheduler: adaptive
 
             # State Backend (RocksDB)
             state.backend: rocksdb
