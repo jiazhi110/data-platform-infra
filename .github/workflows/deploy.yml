@@ -1,9 +1,9 @@
 name: Data Platform CD Pipeline
 
 on:
-  schedule:
-    # Daily automated deployment for dev environment at 05:00 UTC.
-    - cron: '0 5 * * *'
+  # schedule:
+  #   # Daily automated deployment for dev environment at 05:00 UTC.
+  #   # - cron: '0 5 * * *'
 
   # Manual trigger for specific environment deployments.
   workflow_dispatch:
