@@ -112,6 +112,7 @@ resource "aws_glue_job" "top_produce_etl_job" {
     "--ENV"                              = var.environment
     "--S3_SOURCE_PATH"                   = "s3://${var.source_s3_bucket_name}/user_action/"
     "--S3_OUTPUT_PATH"                   = "s3://${var.destination_s3_bucket_name}/batch_output/"
+    "--target_date"                      = ""
   }
 
   tags = {

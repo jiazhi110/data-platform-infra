@@ -68,6 +68,9 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Resource = "arn:aws:states:::glue:startJobRun.sync" 
         Parameters = {
           JobName = aws_glue_job.top_produce_etl_job.name
+          Arguments = {
+            "--target_date.$" = "$$.Execution.StartTime"
+          }
         }
         Retry = [{
           ErrorEquals     = ["Glue.AWSGlueException", "States.TaskFailed"],
