@@ -60,8 +60,20 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
 
   definition = jsonencode({
     Comment         = "Production-grade Glue ETL Orchestration with Result Validation"
-    StartAt         = "RunETLJob"
+    StartAt         = "HasManualOverrides"
     States = {
+      "HasManualOverrides" = {
+        Type = "Choice"
+        Choices = [
+          {
+            Variable = "$.process_date"
+            IsPresent = true
+            Next = "RunETLJobWithOverrides"
+          }
+        ]
+        Default = "RunETLJob"
+      }
+
       # Step 1: Run Glue ETL Job (Synchronous)
       "RunETLJob" = {
         Type     = "Task"
@@ -69,7 +81,31 @@ resource "aws_sfn_state_machine" "etl_pipeline" {
         Parameters = {
           JobName = aws_glue_job.top_produce_etl_job.name
           Arguments = {
-            "--target_date.$" = "$$.Execution.StartTime"
+            "--process_date.$" = "States.ArrayGetItem(States.StringSplit($$.Execution.StartTime, 'T'), 0)"
+            "--is_backfill"    = "false"
+          }
+        }
+        Retry = [{
+          ErrorEquals     = ["Glue.AWSGlueException", "States.TaskFailed"],
+          IntervalSeconds = 60,
+          MaxAttempts     = 3,
+          BackoffRate     = 2.0
+        }]
+        Next = "RunCrawler"
+        Catch = [{
+          ErrorEquals = ["States.ALL"],
+          Next        = "NotifyFailure"
+        }]
+      }
+
+      "RunETLJobWithOverrides" = {
+        Type     = "Task"
+        Resource = "arn:aws:states:::glue:startJobRun.sync"
+        Parameters = {
+          JobName = aws_glue_job.top_produce_etl_job.name
+          Arguments = {
+            "--process_date.$" = "$.process_date"
+            "--is_backfill.$"  = "$.is_backfill"
           }
         }
         Retry = [{
